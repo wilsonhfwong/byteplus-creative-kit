@@ -21,7 +21,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="Creative Kit desktop test ") as temporary:
         env = {**os.environ, "BYTEPLUS_CREATIVE_DATA_DIR": temporary, "BYTEPLUS_CREATIVE_NO_BROWSER": "1"}
         env["PATH"] = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32") if os.name == "nt" else "/usr/bin:/bin"
-        manifest = json.loads((PLUGIN / "mcp.json").read_text())
+        manifest = json.loads((PLUGIN / "mcp.json").read_text(encoding="utf-8"))
         command = manifest["mcpServers"]["byteplus_creative"]["command"].replace("${PLUGIN_ROOT}", str(PLUGIN))
         process = subprocess.Popen([command], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", env=env)
         incoming = queue.Queue()
@@ -58,7 +58,7 @@ def main():
             assert {"creative_kit_setup", "creative_kit_status", "seedream_generate", "seedance_image_to_video", "seedance_library_import", "seedance_library_delete_asset"} <= {t["name"] for t in tools}
             assert time.monotonic() - started < 15, "Discovery waited for runtime downloads"
             initial = tool("creative_kit_status")
-            assert initial["version"] == json.loads((PLUGIN / "plugin.json").read_text())["version"]
+            assert initial["version"] == json.loads((PLUGIN / "plugin.json").read_text(encoding="utf-8"))["version"]
             assert initial["runtime"] == "not_prepared" and initial["generation_configured"] is False
             blocked = tool("seedream_generate", {"prompt": "No cloud request must be made"})
             assert blocked["status"] == "setup_required"
