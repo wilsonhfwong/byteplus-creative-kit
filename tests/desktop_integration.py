@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import queue
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -36,26 +37,58 @@ def physical_windows_file(path):
     return Path("\\\\" + value[8:] if value.startswith("\\\\?\\UNC\\") else value.removeprefix("\\\\?\\"))
 
 
-def main(require_virtualization=False):
-    with tempfile.TemporaryDirectory(prefix="Creative Kit desktop test ") as temporary:
+def legacy_snapshot(root):
+    result = {}
+    for folder, directories, files in os.walk(root, followlinks=False):
+        for name in directories + files:
+            path = Path(folder) / name
+            info = path.lstat()
+            result[str(path.relative_to(root))] = (info.st_size, info.st_mtime_ns)
+    return result
+
+
+def main(require_virtualization=False, migrate_legacy=False):
+    with tempfile.TemporaryDirectory(prefix="Creative Kit desktop test ", dir=Path.home() if os.name == "nt" else None) as temporary:
         data = Path(temporary)
+        values = {"api_key": "dummy-api-acceptance-sentinel", "access_key": "dummy-iam-acceptance-sentinel", "secret_key": "dummy-secret-acceptance-sentinel", "project": "default", "tos_bucket": "dummy-private-bucket"}
+        env = {**os.environ, "BYTEPLUS_CREATIVE_DATA_DIR": str(data), "BYTEPLUS_CREATIVE_NO_BROWSER": "1"}
+        if os.name == "nt":
+            env["USERPROFILE"] = temporary
+            env.pop("BYTEPLUS_CREATIVE_DATA_DIR", None)
+            env["APPDATA"] = str(Path(temporary) / "AppData" / "Roaming")
+            env["LOCALAPPDATA"] = str(Path(temporary) / "AppData" / "Local")
+            data = Path(temporary) / ".byteplus-creative-kit"
         if require_virtualization:
             assert os.name == "nt"
-            data = Path(os.environ["APPDATA"]) / ("BytePlusCreativeKit-CI-" + uuid.uuid4().hex)
-            data.mkdir()
-            marker = data / "physical-path-probe.txt"
+            logical_profile = Path(os.environ["APPDATA"]) / ("BytePlusCreativeKit-CI-" + uuid.uuid4().hex)
+            logical_profile.mkdir()
+            marker = logical_profile / "physical-path-probe.txt"
             marker.write_text("synthetic MSIX fixture", encoding="utf-8")
-            actual = physical_windows_file(marker).parent
-            assert str(actual).casefold() != str(data).casefold(), "Probe did not exercise AppData redirection"
-            assert "localcache" in str(actual).casefold(), "Probe has no MSIX private storage"
+            old_actual = physical_windows_file(marker).parent
+            assert str(old_actual).casefold() != str(logical_profile).casefold(), "Probe did not exercise AppData redirection"
+            assert "localcache" in str(old_actual).casefold(), "Probe has no MSIX private storage"
+            old_data = logical_profile / "BytePlusCreativeKit"
+            old_data.mkdir()
+            old_physical = old_actual / "BytePlusCreativeKit"
             # Preserve a genuine dangling legacy junction, as on the repaired
             # customer installation. The replacement runtime must ignore it.
-            legacy = actual / "python"
+            legacy = old_physical / "python"
             legacy.mkdir()
             (legacy / "cpython-3.12.14-windows-x86_64-none").mkdir()
-            subprocess.run(["cmd", "/c", "mklink", "/J", str(legacy / "cpython-3.12-windows-x86_64-none"), str(data / "missing-logical-target")], check=True, capture_output=True)
+            subprocess.run(["cmd", "/c", "mklink", "/J", str(legacy / "cpython-3.12-windows-x86_64-none"), str(old_data / "missing-logical-target")], check=True, capture_output=True)
+            env["APPDATA"] = str(logical_profile)
+            env["LOCALAPPDATA"] = os.environ["LOCALAPPDATA"]
+            if migrate_legacy:
+                (old_data / "settings.json").write_text(json.dumps(values), encoding="utf-8")
+                connection = sqlite3.connect(old_data / "library.sqlite3")
+                with connection:
+                    connection.execute("CREATE TABLE migration_fixture (operation_id TEXT PRIMARY KEY)")
+                    connection.execute("INSERT INTO migration_fixture VALUES ('retained-operation')")
+                connection.close()
+                # Reproduce the earlier repair's persisted physical AppData override.
+                env["BYTEPLUS_CREATIVE_DATA_DIR"] = str(old_physical)
+            old_snapshot = legacy_snapshot(old_actual)
             print("PASS: real MSIX AppData redirection and dangling legacy junction are present.", flush=True)
-        env = {**os.environ, "BYTEPLUS_CREATIVE_DATA_DIR": str(data), "BYTEPLUS_CREATIVE_NO_BROWSER": "1"}
         env["PATH"] = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32") if os.name == "nt" else "/usr/bin:/bin"
         manifest = json.loads((PLUGIN / "mcp.json").read_text(encoding="utf-8"))
         declared = manifest["mcpServers"]["byteplus_creative"]["command"]
@@ -98,9 +131,17 @@ def main(require_virtualization=False):
             assert time.monotonic() - started < 15, "Discovery waited for runtime downloads"
             initial = tool("creative_kit_status")
             assert initial["version"] == json.loads((PLUGIN / "plugin.json").read_text(encoding="utf-8"))["version"]
-            assert initial["runtime"] == "not_prepared" and initial["generation_configured"] is False
-            blocked = tool("seedream_generate", {"prompt": "No cloud request must be made"})
-            assert blocked["status"] == "setup_required"
+            assert initial["runtime"] == "not_prepared" and initial["generation_configured"] is migrate_legacy
+            assert Path(initial["data_folder"]).resolve() == data.resolve(), initial
+            if migrate_legacy:
+                assert json.loads((data / "settings.json").read_text(encoding="utf-8")) == values
+                with sqlite3.connect(data / "library.sqlite3") as migrated:
+                    assert migrated.execute("SELECT operation_id FROM migration_fixture").fetchone()[0] == "retained-operation"
+                migrated.close()
+                print("PASS: saved keys and real SQLite asset records migrated automatically from the old repair location.", flush=True)
+            else:
+                blocked = tool("seedream_generate", {"prompt": "No cloud request must be made"})
+                assert blocked["status"] == "setup_required"
             setup = tool("creative_kit_setup")
             url = setup["setup_url"]
             assert urllib.parse.urlsplit(url).hostname == "127.0.0.1"
@@ -109,7 +150,7 @@ def main(require_virtualization=False):
                 page = response.read().decode()
             assert "type=\"password\"" in page and "无需打开终端" in page
             token = urllib.parse.urlsplit(url).path.strip("/")
-            values = {"csrf": token, "api_key": "dummy-api-acceptance-sentinel", "access_key": "dummy-iam-acceptance-sentinel", "secret_key": "dummy-secret-acceptance-sentinel", "project": "default", "tos_bucket": "dummy-private-bucket"}
+            values["csrf"] = token
             body = urllib.parse.urlencode(values).encode()
             origin = "http://" + urllib.parse.urlsplit(url).netloc
             post = urllib.request.Request(url, data=body, headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": origin})
@@ -141,12 +182,17 @@ def main(require_virtualization=False):
             if os.name != "nt":
                 assert (data / "settings.json").stat().st_mode & 0o777 == 0o600
             if require_virtualization:
-                environments = list((actual / "runtime").glob("*/venv/pyvenv.cfg"))
+                environments = list((data / "runtime").glob("*/venv/pyvenv.cfg"))
                 assert len(environments) == 1
                 home = next(line.removeprefix("home = ") for line in environments[0].read_text(encoding="utf-8").splitlines() if line.startswith("home = "))
-                assert Path(home).is_relative_to(actual), "Python venv retained a logical AppData target"
+                assert Path(home).is_relative_to(data), "Python venv is outside the user-folder storage"
+                assert "appdata" not in str(home).casefold(), "Python runtime is still in AppData"
+                assert (data / "tmp").is_dir(), "Runtime temporary storage was not moved to the user folder"
                 assert (legacy / "cpython-3.12.14-windows-x86_64-none").is_dir(), "Legacy runtime was deleted"
-                print("PASS: packaged bootstrap and Python worker use physical storage; old download is retained.", flush=True)
+                assert old_snapshot == legacy_snapshot(old_actual), "The updated kit wrote to legacy AppData"
+                print("PASS: packaged bootstrap and Python worker use the user folder; legacy AppData is unchanged.", flush=True)
+            elif os.name == "nt":
+                assert not (Path(temporary) / "AppData").exists(), "Fresh installation wrote to AppData"
             assert not (PLUGIN / ".runtime").exists(), "Runtime was written into plugin package"
             print("PASS: native discovery, local setup, own Python installation, private credentials, and Python MCP tools; no BytePlus calls.", flush=True)
         finally:
@@ -175,6 +221,7 @@ if __name__ == "__main__":
         with report.with_suffix(".log").open("w", encoding="utf-8", buffering=1) as output, contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
             try:
                 main(require_virtualization=True)
+                main(require_virtualization=True, migrate_legacy=True)
             except Exception:
                 traceback.print_exc()
                 state = "failed"

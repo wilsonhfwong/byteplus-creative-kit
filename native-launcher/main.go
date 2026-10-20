@@ -18,7 +18,7 @@ import (
 	"sync"
 )
 
-const version = "0.2.4"
+const version = "0.2.5"
 
 //go:embed tools.json setup.html
 var resources embed.FS
@@ -124,7 +124,7 @@ func (a *application) status() object {
 		state = "failed"
 	}
 	home, _ := os.UserHomeDir()
-	return object{"status": "ok", "version": version, "generation_configured": values["api_key"] != "", "asset_library_configured": values["access_key"] != "" && values["secret_key"] != "", "local_upload_configured": values["tos_bucket"] != "" && values["access_key"] != "" && values["secret_key"] != "", "seed_text_configured": values["seed_model"] != "", "project": values["project"], "bucket": values["tos_bucket"], "runtime": state, "runtime_error": prepareError, "outputs_folder": filepath.Join(home, "Downloads", "BytePlus Creative Kit"), "message": "若尚未配置，请运行 creative_kit_setup，在本机页面填写凭据。环境准备期间可稍后查询状态；尚未提交任何生成任务。"}
+	return object{"status": "ok", "version": version, "generation_configured": values["api_key"] != "", "asset_library_configured": values["access_key"] != "" && values["secret_key"] != "", "local_upload_configured": values["tos_bucket"] != "" && values["access_key"] != "" && values["secret_key"] != "", "seed_text_configured": values["seed_model"] != "", "project": values["project"], "bucket": values["tos_bucket"], "runtime": state, "runtime_error": prepareError, "data_folder": a.data, "outputs_folder": filepath.Join(home, "Downloads", "BytePlus Creative Kit"), "message": "若尚未配置，请运行 creative_kit_setup，在本机页面填写凭据。环境准备期间可稍后查询状态；尚未提交任何生成任务。"}
 }
 
 func toolResult(value object, failed bool) object {
@@ -277,15 +277,21 @@ func main() {
 		os.Exit(1)
 	}
 	root := filepath.Dir(filepath.Dir(executable))
-	data := os.Getenv("BYTEPLUS_CREATIVE_DATA_DIR")
-	if data == "" {
-		base, err := os.UserConfigDir()
-		if err != nil {
-			os.Exit(1)
-		}
-		data = filepath.Join(base, "BytePlusCreativeKit")
+	home, homeErr := os.UserHomeDir()
+	config, configErr := os.UserConfigDir()
+	if homeErr != nil || (configErr != nil && runtime.GOOS != "windows") {
+		os.Exit(1)
 	}
-	a, err := newApplication(root, data)
+	location, err := chooseStorage(storageOptions{windows: runtime.GOOS == "windows", home: home, config: config, override: os.Getenv("BYTEPLUS_CREATIVE_DATA_DIR"), appDataRoots: []string{filepath.Join(home, "AppData"), os.Getenv("APPDATA"), os.Getenv("LOCALAPPDATA")}})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Cannot select BytePlus Creative Kit's local data folder.")
+		os.Exit(1)
+	}
+	if err := migrateStorage(location); err != nil {
+		fmt.Fprintln(os.Stderr, "BytePlus Creative Kit migration:", err)
+		os.Exit(1)
+	}
+	a, err := newApplication(root, location.data)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Cannot initialize BytePlus Creative Kit's local data folder.")
 		os.Exit(1)

@@ -19,6 +19,8 @@
 
 本地配置页面只监听 127.0.0.1，使用随机能力路径、Origin/Host 与 CSRF 检查，不显示已保存的密钥。工具状态只返回配置是否齐全。更改凭据后，下次工具调用会重新启动私有工作进程；本地上传数据库保存在安装缓存外，以便升级后复用。
 
+0.2.5 起 Windows 默认目录改为 `%USERPROFILE%\.byteplus-creative-kit`。AppData 内的 `BYTEPLUS_CREATIVE_DATA_DIR` 旧修复覆盖会被忽略，包括通过 junction 指回 AppData 的覆盖。已有的 AppData 外显式自定义目录继续使用。新目录不存在时，只从旧位置复制 `settings.json` 和 `library.sqlite3`，整目录暂存后原子发布，不覆盖已存在的新目录，不移动旧运行环境或删除备份。SQLite 有活动事务文件或写入句柄时拒绝复制，请完全退出旧版客户端后重试。Windows 子进程的临时目录、uv 数据及 Python 字节码缓存也固定在新目录；不更改用户级环境变量。Mac 目录保持原样。
+
 ## 开发
 
 维护者需要 Python 3.12、uv 和 Go。客户不需要这些预装工具。
@@ -36,7 +38,7 @@ python scripts/build_native.py
 
 GitHub Actions 会在 Mac 和 Windows 上验证原生启动器的 MCP 连接、配置页面与 Python 工具接通。自动化检查不使用 BytePlus 凭据，也不会发起付费生成。
 
-Windows CI 还运行 `tests/windows-msix.ps1`：创建并签名一个临时测试 MSIX，使用 `Invoke-CommandInDesktopPackage -PreventBreakaway` 运行同一套安装测试，要求真实 AppData 重定向存在；预置悬空的旧 junction，检查新环境能安装并连接 Python 工具。测试只供一次性 CI 机器运行，需要管理员权限临时信任测试签名证书；结束时移除测试包和证书。这是 MSIX 文件系统上下文测试，不代表 ChatGPT 图形界面的客户流程已完成验收。参见 [微软目录句柄 API](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfinalpathnamebyhandlew) 与 [uv 问题记录](https://github.com/astral-sh/uv/issues/19622)。
+Windows CI 还运行 `tests/windows-msix.ps1`：创建并签名一个临时测试 MSIX，使用 `Invoke-CommandInDesktopPackage -PreventBreakaway` 运行安装测试，要求真实 AppData 重定向存在。分别测试用户目录全新安装，以及旧 AppData 修复覆盖、密钥和真实 SQLite 记录的迁移；确认新环境能安装并连接 Python 工具，且旧 AppData 文件树没有新的写入。测试只供一次性 CI 机器运行，需要管理员权限临时信任测试签名证书；结束时移除测试包和证书。这是 MSIX 文件系统上下文测试，不代表 ChatGPT 图形界面的客户流程已完成验收。参见 [微软目录句柄 API](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfinalpathnamebyhandlew) 与 [uv 问题记录](https://github.com/astral-sh/uv/issues/19622)。
 
 配置页面还有真实浏览器回归测试：`python tests/browser_setup.py`（维护者需先安装 Python Playwright 和 Chromium）。Windows CI 同时运行 `python tests/browser_setup.py --browser edge`，使用 Microsoft Edge。测试让浏览器正常提交实际 HTML 表单，检查浏览器自动生成的 Origin、配置落盘及成功提示；仅使用临时虚构密钥，不下载运行环境或调用云端接口。`go test` 默认跳过需要浏览器驱动的夹具。
 
