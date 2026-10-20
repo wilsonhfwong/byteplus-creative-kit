@@ -20,10 +20,15 @@ type worker struct {
 }
 
 func startWorker(a *application) (*worker, error) {
+	temporaryEnv, err := a.temporaryEnvironment()
+	if err != nil {
+		return nil, err
+	}
 	command := exec.Command(a.python(), "-m", "byteplus_creative.plugin_server")
 	home, _ := os.UserHomeDir()
 	command.Dir = a.root
 	command.Env = append(os.Environ(), "BYTEPLUS_CREATIVE_DATA_DIR="+a.data, "BYTEPLUS_CREATIVE_OUTPUT_DIR="+filepath.Join(home, "Downloads", "BytePlus Creative Kit"), "PYTHONUNBUFFERED=1", "PYTHON_DOTENV_DISABLED=1")
+	command.Env = append(command.Env, temporaryEnv...)
 	hideWindow(command)
 	input, err := command.StdinPipe()
 	if err != nil {

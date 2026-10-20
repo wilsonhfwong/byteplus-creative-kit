@@ -62,6 +62,10 @@ func (a *application) prepareRuntime() error {
 	if err := os.MkdirAll(a.environment, 0700); err != nil {
 		return err
 	}
+	temporaryEnv, err := a.temporaryEnvironment()
+	if err != nil {
+		return err
+	}
 	lock := filepath.Join(a.environment, "bootstrap.lock")
 	deadline := time.Now().Add(12 * time.Minute)
 	for {
@@ -106,6 +110,7 @@ func (a *application) prepareRuntime() error {
 	// per-version environment can also exceed the Windows executable loader's
 	// path limit once MSIX has expanded the storage path.
 	command.Env = append(os.Environ(), "UV_CACHE_DIR="+filepath.Join(a.physicalData, "cache"), "UV_PYTHON_INSTALL_DIR="+filepath.Join(a.physicalData, "py"), "UV_PROJECT_ENVIRONMENT="+filepath.Join(a.environment, "venv"), "UV_NO_PROGRESS=1", "PYTHON_DOTENV_DISABLED=1")
+	command.Env = append(command.Env, temporaryEnv...)
 	command.Stdout, command.Stderr = log, log
 	hideWindow(command)
 	if err = command.Run(); err != nil {
@@ -115,6 +120,17 @@ func (a *application) prepareRuntime() error {
 		return err
 	}
 	return os.WriteFile(filepath.Join(a.environment, "ready"), []byte(version+"\n"), 0600)
+}
+
+func (a *application) temporaryEnvironment() ([]string, error) {
+	if runtime.GOOS != "windows" {
+		return nil, nil
+	}
+	temporary := filepath.Join(a.physicalData, "tmp")
+	if err := os.MkdirAll(temporary, 0700); err != nil {
+		return nil, err
+	}
+	return []string{"TEMP=" + temporary, "TMP=" + temporary, "TMPDIR=" + temporary, "UV_DATA_DIR=" + filepath.Join(a.physicalData, "uv-data"), "PYTHONPYCACHEPREFIX=" + filepath.Join(a.physicalData, "cache", "pycache")}, nil
 }
 
 func installUV(target string) error {
