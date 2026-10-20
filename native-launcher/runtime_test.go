@@ -105,7 +105,7 @@ func TestRuntimeRecoversFromLegacyDanglingPythonLink(t *testing.T) {
 	}
 }
 
-func TestDataDirectoryUsesPhysicalLocation(t *testing.T) {
+func TestRuntimeUsesPhysicalLocationWithoutChangingStateView(t *testing.T) {
 	physical := t.TempDir()
 	logical := filepath.Join(t.TempDir(), "logical-AppData")
 	makeDirectoryLink(t, logical, physical)
@@ -114,7 +114,10 @@ func TestDataDirectoryUsesPhysicalLocation(t *testing.T) {
 		t.Fatal(err)
 	}
 	want, _ := filepath.EvalSymlinks(physical)
-	if !strings.EqualFold(a.data, want) {
-		t.Fatalf("runtime paths retain the logical alias: got %q, physical %q", a.data, want)
+	if a.data != logical {
+		t.Fatalf("state reads must retain the existing logical view: got %q, want %q", a.data, logical)
+	}
+	if !strings.HasPrefix(strings.ToLower(a.environment), strings.ToLower(want+string(os.PathSeparator))) {
+		t.Fatalf("runtime paths retain the logical alias: got %q, physical root %q", a.environment, want)
 	}
 }

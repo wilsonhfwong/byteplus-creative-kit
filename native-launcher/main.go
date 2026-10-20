@@ -26,13 +26,13 @@ var resources embed.FS
 type object = map[string]any
 
 type application struct {
-	root, data, environment string
-	mu                      sync.Mutex
-	preparing               bool
-	prepareError            string
-	wizard                  *wizard
-	worker                  *worker
-	workerConfig            [32]byte
+	root, data, physicalData, environment string
+	mu                                    sync.Mutex
+	preparing                             bool
+	prepareError                          string
+	wizard                                *wizard
+	worker                                *worker
+	workerConfig                          [32]byte
 }
 
 func newApplication(root, data string) (*application, error) {
@@ -46,11 +46,12 @@ func newApplication(root, data string) (*application, error) {
 	if err != nil {
 		return nil, err
 	}
-	data = physical
+	// Keep state reads on their existing view: MSIX may merge old real files
+	// with newer virtualized files. Only runtime paths need normalization.
 	// A virtual environment belongs to an installed plugin path. Credentials
 	// and import records remain shared across versions outside that path.
 	digest := sha256.Sum256([]byte(root + "\x00" + version))
-	return &application{root: root, data: data, environment: filepath.Join(data, "runtime", hex.EncodeToString(digest[:8]))}, nil
+	return &application{root: root, data: data, physicalData: physical, environment: filepath.Join(physical, "runtime", hex.EncodeToString(digest[:8]))}, nil
 }
 
 func (a *application) settingsPath() string { return filepath.Join(a.data, "settings.json") }

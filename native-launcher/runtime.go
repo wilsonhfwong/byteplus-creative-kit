@@ -75,7 +75,7 @@ func (a *application) prepareRuntime() error {
 		time.Sleep(time.Second)
 	}
 	defer os.Remove(lock)
-	uv := filepath.Join(a.data, "bin", "uv-"+uvVersion)
+	uv := filepath.Join(a.physicalData, "bin", "uv-"+uvVersion)
 	if runtime.GOOS == "windows" {
 		uv += ".exe"
 	}
@@ -93,7 +93,7 @@ func (a *application) prepareRuntime() error {
 	// Keep the interpreter with this version's virtual environment. An older
 	// shared Python folder may contain a dangling logical-AppData junction;
 	// leave it untouched instead of inspecting it or rewriting user settings.
-	command.Env = append(os.Environ(), "UV_CACHE_DIR="+filepath.Join(a.data, "cache"), "UV_PYTHON_INSTALL_DIR="+filepath.Join(a.environment, "python"), "UV_PROJECT_ENVIRONMENT="+filepath.Join(a.environment, "venv"), "UV_NO_PROGRESS=1", "PYTHON_DOTENV_DISABLED=1")
+	command.Env = append(os.Environ(), "UV_CACHE_DIR="+filepath.Join(a.physicalData, "cache"), "UV_PYTHON_INSTALL_DIR="+filepath.Join(a.environment, "python"), "UV_PROJECT_ENVIRONMENT="+filepath.Join(a.environment, "venv"), "UV_NO_PROGRESS=1", "PYTHON_DOTENV_DISABLED=1")
 	command.Stdout, command.Stderr = log, log
 	hideWindow(command)
 	if err = command.Run(); err != nil {
