@@ -39,7 +39,21 @@ jobs:
         run: python tests/browser_setup.py --browser edge
       - name: Test checked-in desktop launcher with restricted child PATH
         run: python tests/desktop_integration.py
+  msix:
+    runs-on: windows-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Test Windows AppData redirection inside an MSIX package
-        if: runner.os == 'Windows'
         shell: powershell
         run: ./tests/windows-msix.ps1
+      - name: Save MSIX regression diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msix-diagnostics
+          path: ${{ runner.temp }}/Creative Kit MSIX */result.*
+          if-no-files-found: ignore
