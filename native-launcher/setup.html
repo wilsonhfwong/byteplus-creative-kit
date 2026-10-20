@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>BytePlus Creative Kit · 连接账户</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#14223d;background:#f5f7fb}*{box-sizing:border-box}body{margin:0;padding:40px 20px}main{max-width:680px;margin:auto;background:white;border:1px solid #e2e7ef;border-radius:18px;padding:34px}small,.muted{color:#58677f}h1{font-size:27px;margin:8px 0 12px}p{line-height:1.7}label{display:block;font-weight:600;margin:22px 0 8px}input[type=text],input[type=password]{width:100%;font:inherit;border:1px solid #bbc6d7;border-radius:8px;padding:12px;background:white}input:focus{outline:2px solid #235ee7;outline-offset:2px}.help{font-size:13px;margin:7px 0 0;color:#58677f}details{border-top:1px solid #e2e7ef;margin-top:26px;padding-top:22px}summary{cursor:pointer;font-weight:650}button{margin-top:26px;width:100%;border:0;border-radius:9px;padding:14px;background:#1b4ddd;color:white;font:inherit;font-weight:650;cursor:pointer}.success{background:#edf8f0;color:#1c6031;padding:14px;border-radius:8px}.error{background:#fff1ed;color:#9d3519;padding:14px;border-radius:8px}.footer{font-size:12px;line-height:1.7;margin-top:23px}.check{font-weight:400;font-size:13px}.badge{font-size:12px;font-weight:700;letter-spacing:1px;color:#1b4ddd}.status{padding:12px 0;font-size:13px}
+</style></head><body><main>
+<div class="badge">BYTEPLUS CREATIVE KIT</div><h1>连接您的 BytePlus 账户</h1>
+<p class="muted">填写一次，即可在 ChatGPT 桌面应用中生成图片、视频并管理素材。无需打开终端，也无需自行安装 Python 或 Docker。</p>
+{{if .Message}}<p class="success" role="status">{{.Message}}</p>{{end}}{{if .Problem}}<p class="error" role="alert">{{.Problem}}</p>{{end}}
+<form method="post" action="{{.URL}}" autocomplete="off">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<label for="api_key">ModelArk API Key</label><input id="api_key" name="api_key" type="password" autocomplete="new-password" spellcheck="false" {{if not .APIConfigured}}required{{end}} placeholder="{{if .APIConfigured}}已保存；留空保留原值{{else}}用于 Seedream / Seedance 模型调用{{end}}">
+<p class="help">直接在此页面填写，请不要把密钥发送到聊天中。</p>
+<label for="project">ModelArk 项目</label><input id="project" name="project" type="text" value="{{index .Public "project"}}" placeholder="default"><p class="help">素材与模型调用需使用同一项目。不确定时保留 default。</p>
+<details {{if not .IAMConfigured}}open{{end}}><summary>上传图片、视频到素材库（可选）</summary>
+<p class="help">仅生成内容时可先留空。上传本地素材还需 IAM 凭据及位于 ap-southeast-1 的现有私有 TOS 存储桶。</p>
+<label for="access_key">IAM Access Key</label><input id="access_key" name="access_key" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{if .IAMConfigured}}已保存；留空保留原值{{else}}用于素材库和 TOS{{end}}">
+<label for="secret_key">IAM Secret Key</label><input id="secret_key" name="secret_key" type="password" autocomplete="new-password" spellcheck="false" placeholder="留空保留已保存的值">
+<label for="tos_bucket">TOS 存储桶名称</label><input id="tos_bucket" name="tos_bucket" type="text" value="{{index .Public "tos_bucket"}}" spellcheck="false" placeholder="填写桶名称，不是网址">
+<label for="session_token">Session Token（仅临时凭据需要）</label><input id="session_token" name="session_token" type="password" autocomplete="new-password" spellcheck="false" placeholder="长期 IAM 凭据可留空">
+{{if .IAMConfigured}}<label class="check"><input type="checkbox" name="clear_iam" value="yes"> 清除已保存的 IAM 凭据，仅保留模型生成配置</label>{{end}}
+</details>
+<details><summary>Seed 文本辅助（可选）</summary><label for="seed_model">Seed 模型或 Endpoint ID</label><input id="seed_model" name="seed_model" type="text" value="{{index .Public "seed_model"}}" placeholder="使用账户已开通的模型；不需要时留空"></details>
+<button type="submit">保存配置并准备工具</button>
+</form>
+<p class="status">运行环境：{{if eq (index .Status "runtime") "ready"}}已就绪{{else if eq (index .Status "runtime") "preparing"}}正在自动下载和准备，请返回聊天查询状态。{{else if eq (index .Status "runtime") "failed"}}准备失败，请检查网络后再次保存重试。{{else}}保存配置后自动准备{{end}}</p>
+<p class="footer muted">此页面只在您的电脑上运行。凭据以明文配置文件保存在您账户的应用数据文件夹中，不进入插件仓库。请妥善保管电脑和该文件夹。保存配置会下载运行环境，不会上传媒体或发起付费生成。实际生成和存储费用由您的 BytePlus 账户承担。</p>
+</main></body></html>

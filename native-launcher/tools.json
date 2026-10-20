@@ -1,0 +1,914 @@
+[
+  {
+    "name": "seedance_text_to_video",
+    "description": "Submit a text-to-video generation job on Seedance.\n\n    Args:\n        prompt: Detailed scene description. Include subject, action, camera movement,\n                lighting, and style for best results.\n        ratio: Aspect ratio. One of: 21:9 | 16:9 | 4:3 | 1:1 | 3:4 | 9:16 | adaptive,\n               or 'auto' (default) to let the server pick — currently 16:9.\n        duration: Video length in seconds. 4–30 on Seedance 2.5, 4–15 on 2.0.\n                  Pass -1 to let the model choose within that range.\n        resolution: Output quality. 480p | 720p on Seedance 2.5; 2.0 also allows 1080p.\n        generate_audio: Whether to generate a matching audio track.\n        fast_mode: Use the faster/cheaper model variant. There is no Seedance 2.5\n                   fast variant, so this always runs on Seedance 2.0 Fast.\n        model: Model to use — '2.5' (default), '2.0', or '2.0-fast'. Use '2.0' for 1080p.\n        output_format: 'mp4' (default) or 'mov' (Seedance 2.5 only). mov carries higher\n                       colour precision for grading/compositing but plays in fewer players.\n        seed: Random seed for reproducible results.\n        camerafixed: Fix the camera — no panning or zooming.\n\n    Returns:\n        dict with task_id and status. Poll seedance_check_task every 10–15s.\n    ",
+    "inputSchema": {
+      "properties": {
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "ratio": {
+          "default": "auto",
+          "title": "Ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "resolution": {
+          "default": "720p",
+          "title": "Resolution",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": false,
+          "title": "Generate Audio",
+          "type": "boolean"
+        },
+        "fast_mode": {
+          "default": false,
+          "title": "Fast Mode",
+          "type": "boolean"
+        },
+        "model": {
+          "default": "",
+          "title": "Model",
+          "type": "string"
+        },
+        "output_format": {
+          "default": "",
+          "title": "Output Format",
+          "type": "string"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "camerafixed": {
+          "default": false,
+          "title": "Camerafixed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "seedance_text_to_videoArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "seedance_image_to_video",
+    "description": "Submit a reference-to-video generation job on Seedance.\n\n    Supports the full all-round-reference set, bound by content[] role:\n      1. image_urls: character/object/scene reference images (tag as @Image1, @Image2)\n      2. first_frame_url: pin the exact starting frame\n      3. first_frame_url + last_frame_url: transition between two images\n      4. video_urls: reference videos for motion/camera rhythm (tag as @Video1, ...)\n      5. audio_urls: reference audio for lip-sync / beat / pacing (tag as @Audio1, ...)\n\n    To EDIT or EXTEND an existing video, prefer seedance_edit_video /\n    seedance_extend_video — they apply the ratio and duration constraints those\n    task types require. Describing an edit here submits successfully and then\n    fails asynchronously minutes later if the parameters clash.\n\n    Limits: Seedance 2.5 allows ≤30 images, ≤10 videos, ≤10 audio, each clip ≤30s\n    and ≤30s in total per media type; Seedance 2.0 allows ≤9 / ≤3 / ≤3 at ≤15s.\n    Seedance 2.5 also accepts audio-only input (no image or video needed).\n    Video and audio references are URL-only (not auto-uploaded to the asset library).\n\n    Args:\n        prompt: Motion and camera description. Tag references as @Image1, @Video1, @Audio1\n                on Seedance 2.5 ([image1], [video1], [audio1] on 2.0).\n        image_urls: Reference image URLs (HTTPS or asset://). Matched to @Image1, @Image2, ...\n        first_frame_url: URL of the exact frame the video must START from.\n        last_frame_url: URL of the exact frame the video must END at (requires first_frame_url).\n        video_urls: Reference video URLs. Matched to @Video1, @Video2, ...\n        audio_urls: Reference audio URLs (MP3/WAV). Matched to @Audio1, ...\n        ratio: Aspect ratio. One of: 21:9 | 16:9 | 4:3 | 1:1 | 3:4 | 9:16 | adaptive,\n               or 'auto' (default). On Seedance 2.5 a first-frame job locks the output\n               ratio to the first frame image, so it accepts only 'adaptive' — 'auto'\n               resolves to that for you.\n        duration: Video length in seconds. 4–30 on Seedance 2.5, 4–15 on 2.0, or -1\n                  to let the model choose.\n        resolution: Output quality. 480p | 720p on Seedance 2.5; 2.0 also allows 1080p.\n        generate_audio: Whether to generate a matching audio track (separate from audio_urls).\n        fast_mode: Use the faster/cheaper variant — always Seedance 2.0 Fast.\n        model: '2.5' (default), '2.0', or '2.0-fast'.\n        output_format: 'mp4' (default) or 'mov' (Seedance 2.5 only).\n        seed: Random seed for reproducible results.\n        camerafixed: Fix the camera — no movement.\n\n    Returns:\n        dict with task_id and status. Poll seedance_check_task every 10–15s.\n    ",
+    "inputSchema": {
+      "properties": {
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "image_urls": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image Urls"
+        },
+        "first_frame_url": {
+          "default": "",
+          "title": "First Frame Url",
+          "type": "string"
+        },
+        "last_frame_url": {
+          "default": "",
+          "title": "Last Frame Url",
+          "type": "string"
+        },
+        "video_urls": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Video Urls"
+        },
+        "audio_urls": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audio Urls"
+        },
+        "ratio": {
+          "default": "auto",
+          "title": "Ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "resolution": {
+          "default": "720p",
+          "title": "Resolution",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": false,
+          "title": "Generate Audio",
+          "type": "boolean"
+        },
+        "fast_mode": {
+          "default": false,
+          "title": "Fast Mode",
+          "type": "boolean"
+        },
+        "model": {
+          "default": "",
+          "title": "Model",
+          "type": "string"
+        },
+        "output_format": {
+          "default": "",
+          "title": "Output Format",
+          "type": "string"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "camerafixed": {
+          "default": false,
+          "title": "Camerafixed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "seedance_image_to_videoArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "seedance_edit_video",
+    "description": "Edit an EXISTING video with Seedance 2.5 — add, remove, or replace elements.\n\n    Use for requests like \"remove the people in the background\", \"change her jacket\n    to red\", or \"take the music out of this clip\". The model works out which\n    reference video to edit from the prompt, so name it explicitly (@Video1) when\n    passing more than one.\n\n    Constraints handled for you (they are NOT settable — the API rejects overrides):\n      • The output keeps the source video's aspect ratio.\n      • The output keeps the source video's duration, and may run up to ~0.4s shorter.\n      • The source video must itself be 4–30 seconds long.\n\n    Seedance 2.5 only. For a clip that should CONTINUE rather than change, use\n    seedance_extend_video.\n\n    Args:\n        prompt: The edit to perform, naming the target — e.g.\n                \"Video edit: remove everyone in @Video1 except the protagonist.\"\n        video_urls: Reference video URLs; the one to edit is chosen from the prompt.\n                    Up to 10, each 2–30s and ≤30s in total.\n        image_urls: Optional reference images for anything being added (up to 30).\n        audio_urls: Optional reference audio (up to 10).\n        resolution: 480p or 720p.\n        generate_audio: Generate a matching audio track (default True).\n        output_format: 'mov' (default) or 'mp4'. mov is recommended for edits — its\n                       higher colour precision keeps audio and video in sync and\n                       survives further post-processing. Use mp4 for wider playback.\n        seed: Random seed for reproducible results.\n\n    Returns:\n        dict with task_id and status. Poll seedance_check_task every 10–15s.\n    ",
+    "inputSchema": {
+      "properties": {
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Video Urls",
+          "type": "array"
+        },
+        "image_urls": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image Urls"
+        },
+        "audio_urls": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audio Urls"
+        },
+        "resolution": {
+          "default": "720p",
+          "title": "Resolution",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Generate Audio",
+          "type": "boolean"
+        },
+        "output_format": {
+          "default": "mov",
+          "title": "Output Format",
+          "type": "string"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        }
+      },
+      "required": [
+        "prompt",
+        "video_urls"
+      ],
+      "title": "seedance_edit_videoArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "seedance_extend_video",
+    "description": "Extend an EXISTING video with Seedance 2.5 — continue it forwards or backwards.\n\n    Use for requests like \"keep this shot going for another 8 seconds\" or \"show what\n    happens next\". The model works out which reference video to extend from the\n    prompt, so name it explicitly (@Video1) when passing more than one.\n\n    Constraint handled for you: the output keeps the source video's aspect ratio and\n    it is NOT settable. Unlike editing, the duration IS settable here.\n\n    Seedance 2.5 only. To change what is IN a clip rather than continue it, use\n    seedance_edit_video.\n\n    Args:\n        prompt: The continuation, naming the target — e.g. \"Extend @Video1, then after\n                the window opens, move into the gallery interior of @Video2.\"\n        video_urls: Reference video URLs; the one to extend is chosen from the prompt.\n                    Up to 10, each 2–30s and ≤30s in total.\n        duration: Length of the generated video in seconds (4–30), or -1 (default)\n                  to let the model choose.\n        image_urls: Optional reference images for anything introduced (up to 30).\n        audio_urls: Optional reference audio (up to 10).\n        resolution: 480p or 720p.\n        generate_audio: Generate a matching audio track (default True).\n        output_format: 'mov' (default) or 'mp4'. mov is recommended for extensions —\n                       it keeps audio and video in sync across the join.\n        seed: Random seed for reproducible results.\n\n    Returns:\n        dict with task_id and status. Poll seedance_check_task every 10–15s.\n    ",
+    "inputSchema": {
+      "properties": {
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Video Urls",
+          "type": "array"
+        },
+        "duration": {
+          "default": -1,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_urls": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image Urls"
+        },
+        "audio_urls": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audio Urls"
+        },
+        "resolution": {
+          "default": "720p",
+          "title": "Resolution",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Generate Audio",
+          "type": "boolean"
+        },
+        "output_format": {
+          "default": "mov",
+          "title": "Output Format",
+          "type": "string"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        }
+      },
+      "required": [
+        "prompt",
+        "video_urls"
+      ],
+      "title": "seedance_extend_videoArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "seedance_check_task",
+    "description": "Check the status of a Seedance video generation task.\n\n    Poll every 10–15 seconds after submitting a job. When status == 'succeeded'\n    the response includes video_url, plus duration, ratio, resolution, and (on\n    Seedance 2.5) output_format.\n\n    Note: the returned duration is the API's approximation — total frames // 24 —\n    so it can read up to a second shorter than the real file.\n\n    Args:\n        task_id: The task ID returned by any generation tool.\n\n    Returns:\n        dict with status, and video_url when succeeded.\n    ",
+    "inputSchema": {
+      "properties": {
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id"
+      ],
+      "title": "seedance_check_taskArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "seedance_list_tasks",
+    "description": "List recent Seedance video generation tasks.\n\n    Args:\n        page_num: Page number (1-indexed).\n        page_size: Results per page (max 50).\n        status_filter: Optional. Filter by: queued | running | succeeded | failed | cancelled\n        model_filter: Optional. Filter by model — '2.5', '2.0', '2.0-fast', or a full model ID.\n\n    Returns:\n        dict with tasks list and pagination info.\n    ",
+    "inputSchema": {
+      "properties": {
+        "page_num": {
+          "default": 1,
+          "title": "Page Num",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "status_filter": {
+          "default": "",
+          "title": "Status Filter",
+          "type": "string"
+        },
+        "model_filter": {
+          "default": "",
+          "title": "Model Filter",
+          "type": "string"
+        }
+      },
+      "title": "seedance_list_tasksArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "seedance_cancel_task",
+    "description": "Cancel a queued or running Seedance video generation task.\n\n    Args:\n        task_id: The task ID to cancel.\n    ",
+    "inputSchema": {
+      "properties": {
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id"
+      ],
+      "title": "seedance_cancel_taskArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "seedance_list_models",
+    "description": "List available Seedance models and their capabilities.",
+    "inputSchema": {
+      "properties": {},
+      "title": "seedance_list_modelsArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "seedance_ping",
+    "description": "Check server liveness and current configuration.",
+    "inputSchema": {
+      "properties": {},
+      "title": "seedance_pingArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "seedance_library_create_group",
+    "description": "Create one persistent AIGC group for a fictional subject. Reuse its returned Id. For real people use a previously console-verified group; this tool does not verify people.",
+    "inputSchema": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "seedance_library_create_groupArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false
+    }
+  },
+  {
+    "name": "seedance_library_list_groups",
+    "description": "List virtual AIGC groups. Follow NextToken to see more pages. These are account/project-owned groups.",
+    "inputSchema": {
+      "properties": {
+        "next_token": {
+          "default": "",
+          "title": "Next Token",
+          "type": "string"
+        },
+        "max_results": {
+          "default": 50,
+          "title": "Max Results",
+          "type": "integer"
+        }
+      },
+      "title": "seedance_library_list_groupsArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "seedance_library_get_group",
+    "description": "Inspect an existing group, including a known console-verified real-person group.",
+    "inputSchema": {
+      "properties": {
+        "group_id": {
+          "title": "Group Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "group_id"
+      ],
+      "title": "seedance_library_get_groupArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "seedance_library_import",
+    "description": "Import exactly one local image/video or direct HTTPS media URL into an existing group. Local files use private TOS plus a signed GET URL. Explicit types: Image or Video. Saves the operation and asset IDs; returns Processing promptly. Poll seedance_library_get_asset separately until Active. Repeating the same source/group reuses its recorded operation. Never automatically retry an unresolved creation.",
+    "inputSchema": {
+      "properties": {
+        "group_id": {
+          "title": "Group Id",
+          "type": "string"
+        },
+        "file_path": {
+          "default": "",
+          "title": "File Path",
+          "type": "string"
+        },
+        "source_url": {
+          "default": "",
+          "title": "Source Url",
+          "type": "string"
+        },
+        "asset_type": {
+          "default": "",
+          "title": "Asset Type",
+          "type": "string"
+        },
+        "operation_id": {
+          "default": "",
+          "title": "Operation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "group_id"
+      ],
+      "title": "seedance_library_importArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false
+    }
+  },
+  {
+    "name": "seedance_library_get_asset",
+    "description": "Get an asset's type, status and asset:// reference. Only usable=true / Status=Active permits generation; Processing needs another poll, Failed needs reporting.",
+    "inputSchema": {
+      "properties": {
+        "asset_id": {
+          "title": "Asset Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "asset_id"
+      ],
+      "title": "seedance_library_get_assetArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "seedance_library_list_assets",
+    "description": "List one group's assets with a real group filter. Follow NextToken for all pages. IDs persist across chats; source TOS objects are distinct from library assets.",
+    "inputSchema": {
+      "properties": {
+        "group_id": {
+          "title": "Group Id",
+          "type": "string"
+        },
+        "next_token": {
+          "default": "",
+          "title": "Next Token",
+          "type": "string"
+        },
+        "max_results": {
+          "default": 50,
+          "title": "Max Results",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "group_id"
+      ],
+      "title": "seedance_library_list_assetsArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "seedance_library_update_asset",
+    "description": "Update an asset's remote name. The model still references the asset by asset:// ID and media position, not its name.",
+    "inputSchema": {
+      "properties": {
+        "asset_id": {
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "asset_id",
+        "name"
+      ],
+      "title": "seedance_library_update_assetArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false
+    }
+  },
+  {
+    "name": "seedance_library_delete_asset",
+    "description": "Permanently delete the exact library asset explicitly requested by the user. confirm=true is required. Ensure no active/unknown generation still depends on it. Does not delete its TOS source object.",
+    "inputSchema": {
+      "properties": {
+        "asset_id": {
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "confirm": {
+          "default": false,
+          "title": "Confirm",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "asset_id"
+      ],
+      "title": "seedance_library_delete_assetArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false
+    }
+  },
+  {
+    "name": "seedance_library_import_status",
+    "description": "Read a persisted import after restart or timeout. An unresolved submission must be reconciled, not recreated.",
+    "inputSchema": {
+      "properties": {
+        "operation_id": {
+          "title": "Operation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id"
+      ],
+      "title": "seedance_library_import_statusArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "seedance_library_reconcile_import",
+    "description": "Attach an existing cloud asset ID found after an interrupted import. Checks matching group and type; creates no cloud asset.",
+    "inputSchema": {
+      "properties": {
+        "operation_id": {
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "asset_id": {
+          "title": "Asset Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation_id",
+        "asset_id"
+      ],
+      "title": "seedance_library_reconcile_importArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false
+    }
+  },
+  {
+    "name": "seed_media_upload",
+    "description": "Upload a local image/video to TOS without registering it in the asset library. Returns a temporary signed HTTPS source_url, suitable for Seedream image references. Use seedance_library_import for reusable Seedance assets.",
+    "inputSchema": {
+      "properties": {
+        "file_path": {
+          "title": "File Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file_path"
+      ],
+      "title": "seed_media_uploadArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false
+    }
+  },
+  {
+    "name": "seed_media_download",
+    "description": "Save a provider-generated HTTPS result into Downloads/BytePlus Creative Kit on this computer. Existing files are never overwritten. Download output promptly because provider URLs expire.",
+    "inputSchema": {
+      "properties": {
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "filename": {
+          "default": "",
+          "title": "Filename",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "seed_media_downloadArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false
+    }
+  },
+  {
+    "name": "seed_text",
+    "description": "Call the configured optional Seed text model for prompt planning or text assistance. This is a billed model call; Codex remains the orchestrator.",
+    "inputSchema": {
+      "properties": {
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "max_output_tokens": {
+          "default": 2048,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "seed_textArguments",
+      "type": "object"
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false
+    }
+  },
+  {
+    "name": "seedream_generate",
+    "description": "Generate image(s) with BytePlus Seedream. Synchronous — returns image URLs directly.\n\n    Handles all four modes in one call:\n      1. Text-to-image: pass only a prompt.\n      2. Edit / reference / composition: pass image_urls (public HTTPS URLs) and\n         describe what to change and what to preserve.\n      3. Sequential image set: set sequential=true and num_images=N for a\n         consistent multi-panel series.\n      4. Layer decomposition: set layer_decomposition=true with model=\"5.0-pro\"\n         to split one input image into separate layers.\n\n    Args:\n        prompt: Natural-language description. For text-in-image, wrap the exact\n                words in double quotes. For editing, state what to change and keep.\n        model: Model ID or alias. \"4.5\" / seedream-4-5-251128 (default),\n               \"5.0-lite\" / seedream-5-0-260128,\n               \"5.0-pro\" / dola-seedream-5-0-pro-260628.\n               Seedream 4.5 has no 1K size; 5.0 Pro has no 4K/adaptive size, no\n               sequential sets and no guidance_scale, and caps refs at 10.\n        size: \"1K\" | \"2K\" | \"4K\" | \"adaptive\" | explicit \"WxH\" (e.g. 2048x2048).\n              Defaults to the model's default (2K).\n        image_urls: Reference image URLs (public HTTPS). Local files must be\n                    uploaded first via seedream_upload_image_to_tos.\n        seed: Random seed for reproducible results.\n        guidance_scale: Prompt adherence 1.0–20.0 (higher = stricter).\n        sequential: Enable sequential image-set generation (consistent panels).\n        num_images: Number of images when sequential is enabled (refs + outputs ≤ 15).\n        response_format: \"url\" (default) or \"b64_json\".\n        watermark: Add a watermark to the output.\n        optimize_prompt: Ask the API to expand/optimize the prompt.\n        output_format: \"png\" or \"jpeg\" (5.0 Pro / 5.0 Lite only; API default jpeg).\n        layer_decomposition: Split the image in image_urls into separate layers,\n                returning one image per layer. Seedream 5.0 Pro only, and requires\n                image_urls. In the prompt, say how many layers and name each with\n                its bounding box, e.g. 'Split the content in the image into three\n                layers, including two text groups: <bbox>179 58 809 197</bbox>,\n                <bbox>65 216 319 280</bbox>; and one parrot: <bbox>330 274 641\n                991</bbox>'. bbox coordinates are left top right bottom on a\n                0–1000 scale. Use output_format=\"png\" to keep transparency.\n\n    Returns:\n        dict with model, count, and images (each with url or b64_json).\n        With layer_decomposition: n+1 images — a flattened base image at\n        z_index 0 plus one per layer at z_index 1..n, each carrying name,\n        description and bounding_box. Layers are PNG with transparency even\n        when output_format is jpeg. The decomposition is intermittent: if no\n        image has a z_index it silently did not apply, so retry once.\n    ",
+    "inputSchema": {
+      "properties": {
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "model": {
+          "default": "",
+          "title": "Model",
+          "type": "string"
+        },
+        "size": {
+          "default": "",
+          "title": "Size",
+          "type": "string"
+        },
+        "image_urls": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image Urls"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "guidance_scale": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Guidance Scale"
+        },
+        "sequential": {
+          "default": false,
+          "title": "Sequential",
+          "type": "boolean"
+        },
+        "num_images": {
+          "default": 1,
+          "title": "Num Images",
+          "type": "integer"
+        },
+        "response_format": {
+          "default": "url",
+          "title": "Response Format",
+          "type": "string"
+        },
+        "watermark": {
+          "default": false,
+          "title": "Watermark",
+          "type": "boolean"
+        },
+        "optimize_prompt": {
+          "default": false,
+          "title": "Optimize Prompt",
+          "type": "boolean"
+        },
+        "output_format": {
+          "default": "",
+          "title": "Output Format",
+          "type": "string"
+        },
+        "layer_decomposition": {
+          "default": false,
+          "title": "Layer Decomposition",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "seedream_generateArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "seedream_list_models",
+    "description": "List available Seedream models and their capabilities.",
+    "inputSchema": {
+      "properties": {},
+      "title": "seedream_list_modelsArguments",
+      "type": "object"
+    }
+  },
+  {
+    "name": "seedream_ping",
+    "description": "Check server liveness and current configuration.",
+    "inputSchema": {
+      "properties": {},
+      "title": "seedream_pingArguments",
+      "type": "object"
+    }
+  }
+]

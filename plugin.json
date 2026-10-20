@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "byteplus-creative-kit",
+  "version": "0.2.0",
+  "description": "Generate images with Seedream, videos with Seedance, and manage reusable image/video assets through private TOS uploads.",
+  "repository": "https://github.com/wilsonhfwong/byteplus-creative-kit",
+  "homepage": "https://github.com/wilsonhfwong/byteplus-creative-kit",
+  "extensions": {
+    "com.openai": {
+      "requires_local_executor": true,
+      "onboardingSkill": "./skills/byteplus-creative-setup/SKILL.md",
+      "interface": {
+        "displayName": "BytePlus Creative Kit",
+        "shortDescription": "Seedream 图片、Seedance 视频与素材库管理",
+        "longDescription": "通过本机配置页面连接 BytePlus，使用 Seedream 生成图片、Seedance 生成视频，上传及复用图片/视频素材。自动准备运行环境，无需打开终端或预装 Python、Docker。适用于 ChatGPT 桌面应用的本地执行环境。",
+        "developerName": "BytePlus Creative Kit",
+        "category": "Design",
+        "capabilities": ["Read", "Write"],
+        "defaultPrompt": ["帮我配置 BytePlus Creative Kit", "使用 Seedream 生成一张图片", "上传人物参考素材并使用 Seedance 生成视频"],
+        "brandColor": "#1B4DDD"
+      }
+    }
+  }
+}

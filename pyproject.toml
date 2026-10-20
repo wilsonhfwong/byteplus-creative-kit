@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "byteplus-creative-kit"
+version = "0.2.0"
+description = "Desktop plugin for Seedance, Seedream and a reusable image/video asset library"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "seedance-sdk==2.1.0",
+  "seedance-mcp==2.1.0",
+  "seedream-sdk==1.0.0",
+  "seedream-mcp==1.0.0",
+  "mcp>=1.0.0,<2.0.0",
+  "tos>=2.9.2,<3.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "pytest-asyncio>=0.24", "pytest-httpserver>=1", "pyyaml>=6,<7"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["byteplus_creative"]
+
+[tool.uv.workspace]
+members = ["packages/seedance-sdk", "packages/seedance-mcp", "packages/seedream-sdk", "packages/seedream-mcp"]
+
+[tool.uv.sources]
+seedance-sdk = { workspace = true }
+seedance-mcp = { workspace = true }
+seedream-sdk = { workspace = true }
+seedream-mcp = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

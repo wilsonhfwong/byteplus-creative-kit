@@ -1,0 +1,32 @@
+name: Desktop plugin checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.2'
+          cache: false
+      - name: Native unit tests
+        working-directory: native-launcher
+        run: go test ./...
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test checked-in desktop launcher with restricted child PATH
+        run: python tests/desktop_integration.py
