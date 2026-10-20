@@ -6,6 +6,8 @@
 
 ## 安装
 
+**首次从 GitHub 添加仓库前：** ChatGPT 需要能在电脑上找到 Git，才能下载插件仓库。Windows 如尚未安装，请通过 [Git 官方 Windows 下载页](https://git-scm.com/install/windows) 下载 **Git for Windows/x64 Setup**，运行图形安装程序并保留默认选项。安装后完全退出并重新打开 ChatGPT，再添加仓库。整个过程无需输入任何命令。若 Git 已安装但仍提示找不到程序，请先重启 ChatGPT；必要时重启 Windows 后再试。
+
 1. 在 ChatGPT 桌面应用中打开 **Settings → Plugins → Add**，选择添加仓库的选项，填入：
 
    **https://github.com/wilsonhfwong/byteplus-creative-kit**
@@ -81,6 +83,7 @@
 | 情况 | 处理方式 |
 | --- | --- |
 | 安装后找不到工具 | 确认插件已启用，并使用桌面应用的本地 Work/Codex 对话；新建对话后通过 `@BytePlus Creative Kit` 调用。 |
+| 添加仓库时出现 `failed to run git clone` 和 `program not found` | ChatGPT 未找到 Git。通过上方官方链接安装 Git for Windows，完全退出并重新打开 ChatGPT，再重试添加仓库。 |
 | 环境一直在准备或提示失败 | 确认可以访问 GitHub Releases 和 PyPI，再打开配置页面保存重试。无需运行安装命令。 |
 | 保存配置时提示“请求来源无效” | 更新或重新安装 0.2.2 及之后版本，再从插件重新打开 Setup 页面。旧配置页面不会随插件更新而自动修复。 |
 | 可以生成，但无法上传素材 | 补充 IAM 凭据、TOS 私有存储桶，并检查素材库和存储桶权限。 |

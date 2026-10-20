@@ -2,6 +2,8 @@
 
 仓库包含 Mac 和 Windows 两个插件条目；客户添加同一个仓库后，选择对应操作系统的条目安装，不需要手工执行任何脚本。
 
+仓库导入由 ChatGPT 宿主调用 Git 完成。Windows 干净机器需先通过官方图形安装程序安装 Git，并重启 ChatGPT 以加载新的 PATH。插件尚未下载时无法自行补齐这一宿主依赖。原生 MCP 和浏览器配置测试不覆盖宿主的仓库克隆步骤；交付验收还需实际走一次 Add marketplace 安装流程。
+
 - `plugin.template.json`：插件元数据模板。
 - `.agents/plugins/marketplace.json`：指向 `plugins/` 下两个系统版本的条目。
 - `plugins/*/plugin.json` / `mcp.json`：Agent Plugins 格式，包含本地 MCP 和 onboarding skill。
