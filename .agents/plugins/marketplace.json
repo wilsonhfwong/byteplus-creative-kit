@@ -1,11 +1,31 @@
 {
   "name": "byteplus-creative-kit",
-  "interface": {"displayName": "BytePlus Creative Kit"},
+  "interface": {
+    "displayName": "BytePlus Creative Kit"
+  },
   "plugins": [
     {
-      "name": "byteplus-creative-kit",
-      "source": {"source": "local", "path": "./"},
-      "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+      "name": "byteplus-creative-kit-mac",
+      "source": {
+        "source": "local",
+        "path": "./plugins/byteplus-creative-kit-mac"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Design"
+    },
+    {
+      "name": "byteplus-creative-kit-windows",
+      "source": {
+        "source": "local",
+        "path": "./plugins/byteplus-creative-kit-windows"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
       "category": "Design"
     }
   ]

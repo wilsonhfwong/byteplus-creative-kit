@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "byteplus_creative": {
+      "type": "stdio",
+      "command": "${PLUGIN_ROOT}/bin/creative-kit.exe",
+      "cwd": "${PLUGIN_ROOT}",
+      "startup_timeout_sec": 60,
+      "tool_timeout_sec": 240
+    }
+  }
+}

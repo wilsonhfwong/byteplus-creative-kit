@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "seedance-mcp"
+version = "2.1.0"
+description = "MCP server exposing BytePlus Seedance video generation (2.5 + 2.0) to AI clients"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["byteplus", "seedance", "mcp", "video-generation", "ai"]
+dependencies = [
+    "seedance-sdk>=2.1.0",
+    # Supports both major versions: mcp 2.x renamed FastMCP to MCPServer and
+    # moved transport_security onto streamable_http_app(). See server.py.
+    "mcp>=1.0.0",
+    "uvicorn>=0.30.0",
+]
+
+[project.urls]
+Repository = "https://github.com/byteplus/byteplus-seedance"
+
+[tool.hatch.build.targets.wheel]
+packages = ["seedance_mcp"]

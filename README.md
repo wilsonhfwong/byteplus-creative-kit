@@ -10,7 +10,7 @@
 
    **https://github.com/wilsonhfwong/byteplus-creative-kit**
 
-2. 在该来源中选择 **BytePlus Creative Kit** 并安装。若应用要求确认信任插件或允许本地执行，请先查看提示，再按您的组织要求继续。
+2. 按电脑系统选择 **BytePlus Creative Kit · Mac** 或 **BytePlus Creative Kit · Windows** 并安装其中一个。若应用要求确认信任插件或允许本地执行，请先查看提示，再按您的组织要求继续。
 3. 点击插件的 **Setup / 设置**，或在新的本地 Work/Codex 对话中输入：
 
    > 帮我配置 BytePlus Creative Kit。

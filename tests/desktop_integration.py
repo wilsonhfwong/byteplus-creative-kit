@@ -14,15 +14,15 @@ import urllib.parse
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
+PLUGIN = ROOT / "plugins" / ("byteplus-creative-kit-windows" if os.name == "nt" else "byteplus-creative-kit-mac")
 
 
 def main():
     with tempfile.TemporaryDirectory(prefix="Creative Kit desktop test ") as temporary:
         env = {**os.environ, "BYTEPLUS_CREATIVE_DATA_DIR": temporary, "BYTEPLUS_CREATIVE_NO_BROWSER": "1"}
         env["PATH"] = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32") if os.name == "nt" else "/usr/bin:/bin"
-        # Omit .exe exactly as the MCP manifest does; Windows must resolve the
-        # adjacent .exe even though the Mac binary has the extensionless name.
-        command = str(ROOT / "bin" / "creative-kit")
+        manifest = json.loads((PLUGIN / "mcp.json").read_text())
+        command = manifest["mcpServers"]["byteplus_creative"]["command"].replace("${PLUGIN_ROOT}", str(PLUGIN))
         process = subprocess.Popen([command], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", env=env)
         incoming = queue.Queue()
 
@@ -95,7 +95,7 @@ def main():
             assert tool("seed_text", {"prompt": "Do not call a cloud model"})["status"] == "setup_required"
             if os.name != "nt":
                 assert (Path(temporary) / "settings.json").stat().st_mode & 0o777 == 0o600
-            assert not (ROOT / ".runtime").exists(), "Runtime was written into plugin package"
+            assert not (PLUGIN / ".runtime").exists(), "Runtime was written into plugin package"
             print("PASS: native discovery, local setup, own Python installation, private credentials, and Python MCP tools; no BytePlus calls.", flush=True)
         finally:
             if process.poll() is None:
