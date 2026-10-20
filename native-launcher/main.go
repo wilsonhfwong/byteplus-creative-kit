@@ -18,7 +18,7 @@ import (
 	"sync"
 )
 
-const version = "0.2.3"
+const version = "0.2.4"
 
 //go:embed tools.json setup.html
 var resources embed.FS
@@ -39,6 +39,14 @@ func newApplication(root, data string) (*application, error) {
 	if err := os.MkdirAll(data, 0700); err != nil {
 		return nil, err
 	}
+	// MSIX can redirect AppData writes to the host's private package folder.
+	// Pass the opened directory's physical path to uv so its absolute Python
+	// junction targets refer to the files that Windows actually created.
+	physical, err := physicalDirectory(data)
+	if err != nil {
+		return nil, err
+	}
+	data = physical
 	// A virtual environment belongs to an installed plugin path. Credentials
 	// and import records remain shared across versions outside that path.
 	digest := sha256.Sum256([]byte(root + "\x00" + version))

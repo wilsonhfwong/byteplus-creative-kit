@@ -39,3 +39,7 @@ jobs:
         run: python tests/browser_setup.py --browser edge
       - name: Test checked-in desktop launcher with restricted child PATH
         run: python tests/desktop_integration.py
+      - name: Test Windows AppData redirection inside an MSIX package
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./tests/windows-msix.ps1

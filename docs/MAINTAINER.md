@@ -15,6 +15,8 @@
 
 启动器立即响应 MCP 初始化和工具发现。配置完成后，后台下载固定版本 uv 并校验 SHA-256，再按 `uv.lock` 安装自己的 Python 环境。没有配置或运行环境未准备好时，不会发出云端生成/上传请求。Python 工具的丢失响应不会由启动器自动重放。
 
+0.2.4 修复 Windows MSIX 的 AppData 虚拟化：创建数据目录后，从打开的目录句柄调用 `GetFinalPathNameByHandleW`，将实际物理路径传给 uv。Python 安装目录随各版本的虚拟环境保存在 `runtime/<id>/python`，避免升级时再次扫描旧版共享 `python/` 下的悬空 junction。旧下载、密钥和素材记录不迁移或删除；已有 `BYTEPLUS_CREATIVE_DATA_DIR` 覆盖仍生效。不硬编码 ChatGPT 的安装盘符、包名或包族标识，也不修改用户级环境变量或全局 Python 设置。
+
 本地配置页面只监听 127.0.0.1，使用随机能力路径、Origin/Host 与 CSRF 检查，不显示已保存的密钥。工具状态只返回配置是否齐全。更改凭据后，下次工具调用会重新启动私有工作进程；本地上传数据库保存在安装缓存外，以便升级后复用。
 
 ## 开发
@@ -33,6 +35,8 @@ python scripts/build_native.py
 构建 Mac 通用文件需要 macOS 的 lipo；Windows 文件通过 Go 交叉编译。构建脚本同步旧版兼容 manifest，并记录可执行文件校验值。不要提交配置、缓存、运行日志、个人素材或生成结果。
 
 GitHub Actions 会在 Mac 和 Windows 上验证原生启动器的 MCP 连接、配置页面与 Python 工具接通。自动化检查不使用 BytePlus 凭据，也不会发起付费生成。
+
+Windows CI 还运行 `tests/windows-msix.ps1`：创建并签名一个临时测试 MSIX，使用 `Invoke-CommandInDesktopPackage -PreventBreakaway` 运行同一套安装测试，要求真实 AppData 重定向存在；预置悬空的旧 junction，检查新环境能安装并连接 Python 工具。测试结束移除测试包和当前用户证书。这是 MSIX 文件系统上下文测试，不代表 ChatGPT 图形界面的客户流程已完成验收。参见 [微软目录句柄 API](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfinalpathnamebyhandlew) 与 [uv 问题记录](https://github.com/astral-sh/uv/issues/19622)。
 
 配置页面还有真实浏览器回归测试：`python tests/browser_setup.py`（维护者需先安装 Python Playwright 和 Chromium）。Windows CI 同时运行 `python tests/browser_setup.py --browser edge`，使用 Microsoft Edge。测试让浏览器正常提交实际 HTML 表单，检查浏览器自动生成的 Origin、配置落盘及成功提示；仅使用临时虚构密钥，不下载运行环境或调用云端接口。`go test` 默认跳过需要浏览器驱动的夹具。
 
