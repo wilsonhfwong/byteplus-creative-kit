@@ -11,7 +11,7 @@ The supplied archives did not contain a separate upstream LICENSE file. Their pa
 
 The asset API request shapes were adapted with reference to the user's supplied Anna `seed-studio-v4.zip` and Olga `SEEDANCE_ASSET_LIBRARY_AGENT_GUIDE.md`, then checked against the official API documentation. Their complete bundles, internal skills, customer examples and credential files are not included.
 
-Local changes include a native desktop MCP entry point, browser-based local configuration, automatic environment preparation, credential isolation, typed image/video asset import, asset management, persisted import records, output download and optional Seed text calls. Ambiguous generation submissions are not automatically retried. Upstream's SDK and MCP package version metadata is retained for compatibility; the outer plugin is version 0.2.0.
+Local changes include a native desktop MCP entry point, browser-based local configuration, automatic environment preparation, credential isolation, typed image/video asset import, asset management, persisted import records, output download and optional Seed text calls. Ambiguous generation submissions are not automatically retried. Upstream's SDK and MCP package version metadata is retained for compatibility; the outer plugin version is declared in each platform package’s plugin.json.
 
 Runtime dependencies are installed from the locked package versions in `uv.lock` and retain their own package license metadata. The official TOS SDK (`tos`) is Apache-2.0. See those projects for their distribution notices.
 
