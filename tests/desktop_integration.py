@@ -123,7 +123,10 @@ def main(require_virtualization=False):
                 if status["runtime"] != previous:
                     print("Runtime:", status["runtime"], flush=True)
                     previous = status["runtime"]
-                assert status["runtime"] != "failed", status
+                if status["runtime"] == "failed":
+                    log = data / "runtime-install.log"
+                    details = log.read_text(encoding="utf-8", errors="replace") if log.exists() else "No runtime log was created."
+                    raise AssertionError(f"{status}\n{details}")
                 assert all(v not in json.dumps(status) for k, v in values.items() if k in {"api_key", "access_key", "secret_key"})
                 if status["runtime"] == "ready":
                     break

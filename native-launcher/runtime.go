@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -39,6 +40,15 @@ func (a *application) beginPrepare() {
 	a.mu.Unlock()
 	go func() {
 		err := a.prepareRuntime()
+		if err != nil {
+			// Runtime setup never receives credentials as arguments. Preserve
+			// filesystem/download errors locally instead of calling every
+			// preparation failure a network problem with no diagnostic record.
+			if log, openErr := os.OpenFile(filepath.Join(a.data, "runtime-install.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600); openErr == nil {
+				fmt.Fprintln(log, "Runtime preparation failed:", err)
+				log.Close()
+			}
+		}
 		a.mu.Lock()
 		defer a.mu.Unlock()
 		a.preparing = false
@@ -89,6 +99,7 @@ func (a *application) prepareRuntime() error {
 		return err
 	}
 	defer log.Close()
+	fmt.Fprintln(log, "Preparing runtime", version, "in", a.environment)
 	command := exec.Command(uv, "sync", "--directory", a.root, "--locked", "--no-dev", "--python", "3.12", "--managed-python")
 	// Keep the interpreter with this version's virtual environment. An older
 	// shared Python folder may contain a dangling logical-AppData junction;
