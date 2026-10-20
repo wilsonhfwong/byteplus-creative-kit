@@ -38,4 +38,8 @@ GitHub Actions 会在 Mac 和 Windows 上验证原生启动器的 MCP 连接、�
 
 配置页的 `Referrer-Policy` 必须保留为 `same-origin`。`no-referrer` 会令普通表单 POST 发送 `Origin: null`，被现有来源检查拒绝。不要放宽 Origin、Host 或 CSRF 检查来规避此问题。
 
+发布前还需运行宿主集成检查：`python tests/codex_host_integration.py --codex /path/to/codex`。该测试通过真正的 Codex app-server 读取两个平台的插件包，并发现当前平台原生 MCP 工具；使用隔离配置和空凭据，不登录或调用模型。直接启动 MCP 的测试无法覆盖宿主拒绝 manifest 的情况。
+
+便携 `mcp.json` 中的 `command` 必须使用 `./bin/creative-kit` 或 `./bin/creative-kit.exe`。Agent Plugins 不在 `command` 中展开 `${PLUGIN_ROOT}`；它只在 `args`、`env` 和 `cwd` 中展开。参见 [官方 MCP 配置规范](https://agent-plugins.org/plugin-authors/mcp-servers)。否则宿主会拒绝工具配置，同时继续显示技能。
+
 兼容格式和仓库 marketplace 依据 [OpenAI 插件打包文档](https://developers.openai.com/plugins/build/plugins)。Onboarding 依据 [OpenAI MCP Extensions](https://github.com/openai/mcp-extensions/blob/main/docs/spec.md#plugin-onboarding)。

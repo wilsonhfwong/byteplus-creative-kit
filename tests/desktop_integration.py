@@ -22,8 +22,11 @@ def main():
         env = {**os.environ, "BYTEPLUS_CREATIVE_DATA_DIR": temporary, "BYTEPLUS_CREATIVE_NO_BROWSER": "1"}
         env["PATH"] = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32") if os.name == "nt" else "/usr/bin:/bin"
         manifest = json.loads((PLUGIN / "mcp.json").read_text(encoding="utf-8"))
-        command = manifest["mcpServers"]["byteplus_creative"]["command"].replace("${PLUGIN_ROOT}", str(PLUGIN))
-        process = subprocess.Popen([command], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", env=env)
+        declared = manifest["mcpServers"]["byteplus_creative"]["command"]
+        assert declared.startswith("./"), "Agent Plugins commands do not expand PLUGIN_ROOT; use a contained ./ path"
+        command = (PLUGIN / declared[2:]).resolve()
+        assert command.is_relative_to(PLUGIN.resolve()), "Native executable escapes the plugin package"
+        process = subprocess.Popen([str(command)], cwd=PLUGIN, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", env=env)
         incoming = queue.Queue()
 
         def read():

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "byteplus-creative-kit"
-version = "0.2.2"
+version = "0.2.3"
 description = "Desktop plugin for Seedance, Seedream and a reusable image/video asset library"
 requires-python = ">=3.12,<3.13"
 dependencies = [

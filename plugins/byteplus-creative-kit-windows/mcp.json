@@ -3,7 +3,7 @@
   "mcpServers": {
     "byteplus_creative": {
       "type": "stdio",
-      "command": "${PLUGIN_ROOT}/bin/creative-kit.exe",
+      "command": "./bin/creative-kit.exe",
       "cwd": "${PLUGIN_ROOT}"
     }
   }

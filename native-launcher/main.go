@@ -18,7 +18,7 @@ import (
 	"sync"
 )
 
-const version = "0.2.2"
+const version = "0.2.3"
 
 //go:embed tools.json setup.html
 var resources embed.FS

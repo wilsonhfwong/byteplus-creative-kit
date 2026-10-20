@@ -47,14 +47,16 @@ def main():
             manifest["name"] += "-" + platform
             manifest["extensions"]["com.openai"]["interface"]["displayName"] += " · " + label
             (target / "plugin.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
-            servers = {"byteplus_creative": {"type": "stdio", "command": "${PLUGIN_ROOT}/bin/" + filename, "cwd": "${PLUGIN_ROOT}"}}
+            # Agent Plugins expands PLUGIN_ROOT in cwd/args/env, never command.
+            # Bundled executables must use a contained ./ path in mcp.json.
+            servers = {"byteplus_creative": {"type": "stdio", "command": "./bin/" + filename, "cwd": "${PLUGIN_ROOT}"}}
             (target / "mcp.json").write_text(json.dumps({"$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json", "mcpServers": servers}, indent=2) + "\n")
             compatibility = {key: manifest[key] for key in ["name", "version", "description", "repository", "homepage"]}
             compatibility.update(manifest["extensions"]["com.openai"])
             compatibility.update(skills="./skills/", mcpServers="./.mcp.json")
             (target / ".codex-plugin").mkdir(exist_ok=True)
             (target / ".codex-plugin/plugin.json").write_text(json.dumps(compatibility, ensure_ascii=False, indent=2) + "\n")
-            (target / ".mcp.json").write_text(json.dumps({"mcpServers": {key: {**value, "startup_timeout_sec": 60, "tool_timeout_sec": 240} for key, value in servers.items()}}, indent=2) + "\n")
+            (target / ".mcp.json").write_text(json.dumps({"mcpServers": {key: {**value, "command": "${PLUGIN_ROOT}/bin/" + filename, "startup_timeout_sec": 60, "tool_timeout_sec": 240} for key, value in servers.items()}}, indent=2) + "\n")
             digest = hashlib.sha256(executable.read_bytes()).hexdigest()
             (target / "bin/SHA256SUMS").write_text(f"{digest}  bin/{filename}\n")
             catalog.append({"name": manifest["name"], "source": {"source": "local", "path": "./" + target.relative_to(ROOT).as_posix()}, "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"}, "category": "Design"})
