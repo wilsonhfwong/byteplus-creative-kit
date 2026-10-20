@@ -43,7 +43,9 @@ try {
     $certificate = New-SelfSignedCertificate -Type CodeSigningCert -Subject $subject -CertStoreLocation Cert:\CurrentUser\My -HashAlgorithm SHA256
     $publicCertificate = Join-Path $work 'test.cer'
     Export-Certificate -Cert $certificate -FilePath $publicCertificate | Out-Null
-    $trusted = Import-Certificate -FilePath $publicCertificate -CertStoreLocation Cert:\CurrentUser\TrustedPeople
+    # AppX deployment validates against the machine's TrustedPeople store.
+    # This publisher exists only on the disposable CI runner and is removed below.
+    $trusted = Import-Certificate -FilePath $publicCertificate -CertStoreLocation Cert:\LocalMachine\TrustedPeople
     & $signTool sign /fd SHA256 /s My /sha1 $certificate.Thumbprint $archive | Out-Null
     if ($LASTEXITCODE) { throw 'MSIX signing failed.' }
     Add-AppxPackage -Path $archive
@@ -71,6 +73,6 @@ try {
     Write-Output 'PASS: the real native launcher prepares Python and serves tools inside an MSIX file-system context.'
 } finally {
     if ($package) { Remove-AppxPackage -Package $package.PackageFullName }
-    if ($trusted) { Remove-Item -LiteralPath ('Cert:\CurrentUser\TrustedPeople\' + $trusted.Thumbprint) }
+    if ($trusted) { Remove-Item -LiteralPath ('Cert:\LocalMachine\TrustedPeople\' + $trusted.Thumbprint) }
     if ($certificate) { Remove-Item -LiteralPath ('Cert:\CurrentUser\My\' + $certificate.Thumbprint) }
 }

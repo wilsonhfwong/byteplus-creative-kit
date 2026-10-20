@@ -36,7 +36,7 @@ python scripts/build_native.py
 
 GitHub Actions 会在 Mac 和 Windows 上验证原生启动器的 MCP 连接、配置页面与 Python 工具接通。自动化检查不使用 BytePlus 凭据，也不会发起付费生成。
 
-Windows CI 还运行 `tests/windows-msix.ps1`：创建并签名一个临时测试 MSIX，使用 `Invoke-CommandInDesktopPackage -PreventBreakaway` 运行同一套安装测试，要求真实 AppData 重定向存在；预置悬空的旧 junction，检查新环境能安装并连接 Python 工具。测试结束移除测试包和当前用户证书。这是 MSIX 文件系统上下文测试，不代表 ChatGPT 图形界面的客户流程已完成验收。参见 [微软目录句柄 API](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfinalpathnamebyhandlew) 与 [uv 问题记录](https://github.com/astral-sh/uv/issues/19622)。
+Windows CI 还运行 `tests/windows-msix.ps1`：创建并签名一个临时测试 MSIX，使用 `Invoke-CommandInDesktopPackage -PreventBreakaway` 运行同一套安装测试，要求真实 AppData 重定向存在；预置悬空的旧 junction，检查新环境能安装并连接 Python 工具。测试只供一次性 CI 机器运行，需要管理员权限临时信任测试签名证书；结束时移除测试包和证书。这是 MSIX 文件系统上下文测试，不代表 ChatGPT 图形界面的客户流程已完成验收。参见 [微软目录句柄 API](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfinalpathnamebyhandlew) 与 [uv 问题记录](https://github.com/astral-sh/uv/issues/19622)。
 
 配置页面还有真实浏览器回归测试：`python tests/browser_setup.py`（维护者需先安装 Python Playwright 和 Chromium）。Windows CI 同时运行 `python tests/browser_setup.py --browser edge`，使用 Microsoft Edge。测试让浏览器正常提交实际 HTML 表单，检查浏览器自动生成的 Origin、配置落盘及成功提示；仅使用临时虚构密钥，不下载运行环境或调用云端接口。`go test` 默认跳过需要浏览器驱动的夹具。
 
