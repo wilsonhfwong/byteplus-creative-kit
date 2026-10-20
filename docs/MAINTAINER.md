@@ -21,6 +21,8 @@
 
 0.2.5 起 Windows 默认目录改为 `%USERPROFILE%\.byteplus-creative-kit`。AppData 内的 `BYTEPLUS_CREATIVE_DATA_DIR` 旧修复覆盖会被忽略，包括通过 junction 指回 AppData 的覆盖。已有的 AppData 外显式自定义目录继续使用。新目录不存在时，只从旧位置复制 `settings.json` 和 `library.sqlite3`，整目录暂存后原子发布，不覆盖已存在的新目录，不移动旧运行环境或删除备份。SQLite 有活动事务文件或写入句柄时拒绝复制，请完全退出旧版客户端后重试。Windows 子进程的临时目录、uv 数据及 Python 字节码缓存也固定在新目录；不更改用户级环境变量。Mac 目录保持原样。
 
+测试检查 Kit、uv、Python 及 SDK 的文件不保存在 AppData；Windows 自身的 INetCache 和 PowerShell StartupProfileData 不属于 Kit 存储，仅对这些明确的系统缓存位置作例外。插件不会改动 Windows 系统缓存或 ChatGPT 宿主自己的存储策略。
+
 ## 开发
 
 维护者需要 Python 3.12、uv 和 Go。客户不需要这些预装工具。

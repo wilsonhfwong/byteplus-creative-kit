@@ -47,9 +47,19 @@ def legacy_snapshot(root):
     return result
 
 
+def windows_managed_cache(path, package_family):
+    parts = tuple(part.casefold() for part in path.parts)
+    if parts[:6] == ("appdata", "local", "microsoft", "windows", "inetcache", "ie"):
+        return True
+    if parts == ("appdata", "local", "microsoft", "windows", "powershell", "startupprofiledata-noninteractive"):
+        return True
+    return bool(package_family) and parts[:6] == ("appdata", "local", "packages", package_family.casefold(), "ac", "inetcache")
+
+
 def main(require_virtualization=False, migrate_legacy=False):
     with tempfile.TemporaryDirectory(prefix="Creative Kit desktop test ", dir=Path.home() if os.name == "nt" else None) as temporary:
         data = Path(temporary)
+        package_family = ""
         values = {"api_key": "dummy-api-acceptance-sentinel", "access_key": "dummy-iam-acceptance-sentinel", "secret_key": "dummy-secret-acceptance-sentinel", "project": "default", "tos_bucket": "dummy-private-bucket"}
         env = {**os.environ, "BYTEPLUS_CREATIVE_DATA_DIR": str(data), "BYTEPLUS_CREATIVE_NO_BROWSER": "1"}
         if os.name == "nt":
@@ -65,6 +75,7 @@ def main(require_virtualization=False, migrate_legacy=False):
             marker = logical_profile / "physical-path-probe.txt"
             marker.write_text("synthetic MSIX fixture", encoding="utf-8")
             old_actual = physical_windows_file(marker).parent
+            package_family = old_actual.parents[2].name
             assert str(old_actual).casefold() != str(logical_profile).casefold(), "Probe did not exercise AppData redirection"
             assert "localcache" in str(old_actual).casefold(), "Probe has no MSIX private storage"
             old_data = logical_profile / "BytePlusCreativeKit"
@@ -192,11 +203,13 @@ def main(require_virtualization=False, migrate_legacy=False):
                 assert old_snapshot == legacy_snapshot(old_actual), "The updated kit wrote to legacy AppData"
                 print("PASS: packaged bootstrap and Python worker use the user folder; legacy AppData is unchanged.", flush=True)
             if os.name == "nt":
-                # Windows known-folder lookups may create empty directories;
-                # actual settings, caches and runtime files must stay outside.
-                unexpected = [str(path.relative_to(temporary)) for path in (Path(temporary) / "AppData").rglob("*") if path.is_file()]
+                # Windows maintains its own Internet/PowerShell caches. Exempt
+                # only those exact locations; all kit, uv, Python and SDK files
+                # must stay outside AppData.
+                observed = [path.relative_to(temporary) for path in (Path(temporary) / "AppData").rglob("*") if path.is_file()]
+                unexpected = [str(path) for path in observed if not windows_managed_cache(path, package_family)]
                 assert not unexpected, f"Windows installation stored files in AppData: {unexpected}"
-                print("PASS: no kit files stored in AppData.", flush=True)
+                print(f"PASS: no kit files stored in AppData ({len(observed)} Windows-managed Internet/PowerShell cache files observed).", flush=True)
             assert not (PLUGIN / ".runtime").exists(), "Runtime was written into plugin package"
             print("PASS: native discovery, local setup, own Python installation, private credentials, and Python MCP tools; no BytePlus calls.", flush=True)
         finally:
