@@ -191,8 +191,12 @@ def main(require_virtualization=False, migrate_legacy=False):
                 assert (legacy / "cpython-3.12.14-windows-x86_64-none").is_dir(), "Legacy runtime was deleted"
                 assert old_snapshot == legacy_snapshot(old_actual), "The updated kit wrote to legacy AppData"
                 print("PASS: packaged bootstrap and Python worker use the user folder; legacy AppData is unchanged.", flush=True)
-            elif os.name == "nt":
-                assert not (Path(temporary) / "AppData").exists(), "Fresh installation wrote to AppData"
+            if os.name == "nt":
+                # Windows known-folder lookups may create empty directories;
+                # actual settings, caches and runtime files must stay outside.
+                unexpected = [str(path.relative_to(temporary)) for path in (Path(temporary) / "AppData").rglob("*") if path.is_file()]
+                assert not unexpected, f"Windows installation stored files in AppData: {unexpected}"
+                print("PASS: no kit files stored in AppData.", flush=True)
             assert not (PLUGIN / ".runtime").exists(), "Runtime was written into plugin package"
             print("PASS: native discovery, local setup, own Python installation, private credentials, and Python MCP tools; no BytePlus calls.", flush=True)
         finally:
