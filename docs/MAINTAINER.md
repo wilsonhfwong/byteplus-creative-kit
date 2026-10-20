@@ -32,4 +32,8 @@ python scripts/build_native.py
 
 GitHub Actions 会在 Mac 和 Windows 上验证原生启动器的 MCP 连接、配置页面与 Python 工具接通。自动化检查不使用 BytePlus 凭据，也不会发起付费生成。
 
+配置页面还有真实浏览器回归测试：`python tests/browser_setup.py`（维护者需先安装 Python Playwright 和 Chromium）。Windows CI 同时运行 `python tests/browser_setup.py --browser edge`，使用 Microsoft Edge。测试让浏览器正常提交实际 HTML 表单，检查浏览器自动生成的 Origin、配置落盘及成功提示；仅使用临时虚构密钥，不下载运行环境或调用云端接口。`go test` 默认跳过需要浏览器驱动的夹具。
+
+配置页的 `Referrer-Policy` 必须保留为 `same-origin`。`no-referrer` 会令普通表单 POST 发送 `Origin: null`，被现有来源检查拒绝。不要放宽 Origin、Host 或 CSRF 检查来规避此问题。
+
 兼容格式和仓库 marketplace 依据 [OpenAI 插件打包文档](https://developers.openai.com/plugins/build/plugins)。Onboarding 依据 [OpenAI MCP Extensions](https://github.com/openai/mcp-extensions/blob/main/docs/spec.md#plugin-onboarding)。

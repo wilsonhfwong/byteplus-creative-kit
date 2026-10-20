@@ -28,5 +28,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install browser regression dependencies
+        run: python -m pip install "playwright>=1.50,<2"
+      - name: Install Chromium for browser regression
+        run: python -m playwright install chromium
+      - name: Submit setup form in a real browser
+        run: python tests/browser_setup.py
+      - name: Submit setup form in Microsoft Edge
+        if: runner.os == 'Windows'
+        run: python tests/browser_setup.py --browser edge
       - name: Test checked-in desktop launcher with restricted child PATH
         run: python tests/desktop_integration.py

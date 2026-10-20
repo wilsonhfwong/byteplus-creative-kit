@@ -71,7 +71,10 @@ func openBrowser(url string) error {
 
 func (w *wizard) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Cache-Control", "no-store")
-	response.Header().Set("Referrer-Policy", "no-referrer")
+	// HTML form POSTs use this policy when serializing Origin. no-referrer
+	// produces Origin: null and makes our own form fail the check below.
+	// same-origin retains the local origin and suppresses cross-origin referrers.
+	response.Header().Set("Referrer-Policy", "same-origin")
 	response.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")
 	response.Header().Set("X-Content-Type-Options", "nosniff")
 	if request.Host != w.host || request.URL.Path != "/"+w.token+"/" {

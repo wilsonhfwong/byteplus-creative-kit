@@ -58,13 +58,16 @@ def main():
             assert {"creative_kit_setup", "creative_kit_status", "seedream_generate", "seedance_image_to_video", "seedance_library_import", "seedance_library_delete_asset"} <= {t["name"] for t in tools}
             assert time.monotonic() - started < 15, "Discovery waited for runtime downloads"
             initial = tool("creative_kit_status")
+            assert initial["version"] == json.loads((PLUGIN / "plugin.json").read_text())["version"]
             assert initial["runtime"] == "not_prepared" and initial["generation_configured"] is False
             blocked = tool("seedream_generate", {"prompt": "No cloud request must be made"})
             assert blocked["status"] == "setup_required"
             setup = tool("creative_kit_setup")
             url = setup["setup_url"]
             assert urllib.parse.urlsplit(url).hostname == "127.0.0.1"
-            page = urllib.request.urlopen(url, timeout=15).read().decode()
+            with urllib.request.urlopen(url, timeout=15) as response:
+                assert response.headers["Referrer-Policy"] == "same-origin", "Native setup policy breaks browser Origin validation"
+                page = response.read().decode()
             assert "type=\"password\"" in page and "无需打开终端" in page
             token = urllib.parse.urlsplit(url).path.strip("/")
             values = {"csrf": token, "api_key": "dummy-api-acceptance-sentinel", "access_key": "dummy-iam-acceptance-sentinel", "secret_key": "dummy-secret-acceptance-sentinel", "project": "default", "tos_bucket": "dummy-private-bucket"}

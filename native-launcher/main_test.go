@@ -90,8 +90,10 @@ func TestLocalSetupRejectsCrossOriginAndKeepsSecretsOutOfPage(t *testing.T) {
 	a.preparing = true // isolate the form from runtime downloads
 	w := &wizard{app: a, host: "127.0.0.1:12345", origin: "http://127.0.0.1:12345", token: "test-token", url: "http://127.0.0.1:12345/test-token/"}
 	form := url.Values{"csrf": {"test-token"}, "api_key": {"secret-api-sentinel"}, "access_key": {"secret-ak-sentinel"}, "secret_key": {"secret-sk-sentinel"}, "project": {"default"}, "tos_bucket": {"private-bucket"}}
-	if r := wizardRequest(t, w, http.MethodPost, form, "https://untrusted.example"); r.Code != http.StatusForbidden {
-		t.Fatal("cross-origin write accepted")
+	for _, origin := range []string{"https://untrusted.example", "null", "", "http://127.0.0.1:54321"} {
+		if r := wizardRequest(t, w, http.MethodPost, form, origin); r.Code != http.StatusForbidden {
+			t.Fatalf("untrusted origin %q accepted", origin)
+		}
 	}
 	if _, err := os.Stat(a.settingsPath()); !os.IsNotExist(err) {
 		t.Fatal("rejected request wrote settings")
@@ -116,6 +118,9 @@ func TestLocalSetupRejectsCrossOriginAndKeepsSecretsOutOfPage(t *testing.T) {
 	}
 	if r.Header().Get("Cache-Control") != "no-store" || !strings.Contains(r.Header().Get("Content-Security-Policy"), "frame-ancestors 'none'") {
 		t.Fatal("missing page protections")
+	}
+	if r.Header().Get("Referrer-Policy") != "same-origin" {
+		t.Fatal("setup policy must preserve the Origin of its own browser form POST")
 	}
 	blank := url.Values{"csrf": {"test-token"}, "api_key": {""}, "project": {"new-project"}}
 	r = wizardRequest(t, w, http.MethodPost, blank, w.origin)
