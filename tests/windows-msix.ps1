@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $work = Join-Path $env:RUNNER_TEMP ('Creative Kit MSIX ' + [guid]::NewGuid().ToString('N'))
 $payload = Join-Path $work 'payload'
-$packageName = 'BytePlusCreativeKit.Regression' + [guid]::NewGuid().ToString('N')
+$packageName = 'BytePlusKit.Probe' + [guid]::NewGuid().ToString('N')
 $subject = 'CN=BytePlus Creative Kit Regression'
 $certificate = $null
 $trusted = $null
