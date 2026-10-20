@@ -15,7 +15,7 @@
 
 启动器立即响应 MCP 初始化和工具发现。配置完成后，后台下载固定版本 uv 并校验 SHA-256，再按 `uv.lock` 安装自己的 Python 环境。没有配置或运行环境未准备好时，不会发出云端生成/上传请求。Python 工具的丢失响应不会由启动器自动重放。
 
-0.2.4 修复 Windows MSIX 的 AppData 虚拟化：创建数据目录后，从打开的目录句柄调用 `GetFinalPathNameByHandleW`，将实际物理路径传给 uv。Python 安装目录随各版本的虚拟环境保存在 `runtime/<id>/python`，避免升级时再次扫描旧版共享 `python/` 下的悬空 junction。旧下载、密钥和素材记录不迁移或删除；已有 `BYTEPLUS_CREATIVE_DATA_DIR` 覆盖仍生效。不硬编码 ChatGPT 的安装盘符、包名或包族标识，也不修改用户级环境变量或全局 Python 设置。
+0.2.4 修复 Windows MSIX 的 AppData 虚拟化：创建数据目录后，从打开的目录句柄调用 `GetFinalPathNameByHandleW`，将实际物理路径传给 uv。新的 Python 安装目录为物理数据目录下较短的 `py/`，避免再次扫描旧版 `python/` 下的悬空 junction，同时减少 MSIX 展开路径触及 Windows 可执行文件加载长度限制的风险。各版本的虚拟环境仍保存在 `runtime/<id>/venv`。凭据及素材记录继续使用原来的文件系统视图，旧下载不迁移或删除；已有 `BYTEPLUS_CREATIVE_DATA_DIR` 覆盖仍生效。不硬编码 ChatGPT 的安装盘符、包名或包族标识，也不修改用户级环境变量或全局 Python 设置。
 
 本地配置页面只监听 127.0.0.1，使用随机能力路径、Origin/Host 与 CSRF 检查，不显示已保存的密钥。工具状态只返回配置是否齐全。更改凭据后，下次工具调用会重新启动私有工作进程；本地上传数据库保存在安装缓存外，以便升级后复用。
 

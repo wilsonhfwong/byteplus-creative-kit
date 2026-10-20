@@ -101,10 +101,11 @@ func (a *application) prepareRuntime() error {
 	defer log.Close()
 	fmt.Fprintln(log, "Preparing runtime", version, "in", a.environment)
 	command := exec.Command(uv, "sync", "--directory", a.root, "--locked", "--no-dev", "--python", "3.12", "--managed-python")
-	// Keep the interpreter with this version's virtual environment. An older
-	// shared Python folder may contain a dangling logical-AppData junction;
-	// leave it untouched instead of inspecting it or rewriting user settings.
-	command.Env = append(os.Environ(), "UV_CACHE_DIR="+filepath.Join(a.physicalData, "cache"), "UV_PYTHON_INSTALL_DIR="+filepath.Join(a.environment, "python"), "UV_PROJECT_ENVIRONMENT="+filepath.Join(a.environment, "venv"), "UV_NO_PROGRESS=1", "PYTHON_DOTENV_DISABLED=1")
+	// Use a fresh, short interpreter root. The old python/ directory may have
+	// dangling logical-AppData junctions. Nesting the interpreter below the
+	// per-version environment can also exceed the Windows executable loader's
+	// path limit once MSIX has expanded the storage path.
+	command.Env = append(os.Environ(), "UV_CACHE_DIR="+filepath.Join(a.physicalData, "cache"), "UV_PYTHON_INSTALL_DIR="+filepath.Join(a.physicalData, "py"), "UV_PROJECT_ENVIRONMENT="+filepath.Join(a.environment, "venv"), "UV_NO_PROGRESS=1", "PYTHON_DOTENV_DISABLED=1")
 	command.Stdout, command.Stderr = log, log
 	hideWindow(command)
 	if err = command.Run(); err != nil {
