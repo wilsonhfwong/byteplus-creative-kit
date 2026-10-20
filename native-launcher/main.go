@@ -18,7 +18,7 @@ import (
 	"sync"
 )
 
-const version = "0.2.3"
+const version = "0.2.4"
 
 //go:embed tools.json setup.html
 var resources embed.FS
@@ -26,23 +26,32 @@ var resources embed.FS
 type object = map[string]any
 
 type application struct {
-	root, data, environment string
-	mu                      sync.Mutex
-	preparing               bool
-	prepareError            string
-	wizard                  *wizard
-	worker                  *worker
-	workerConfig            [32]byte
+	root, data, physicalData, environment string
+	mu                                    sync.Mutex
+	preparing                             bool
+	prepareError                          string
+	wizard                                *wizard
+	worker                                *worker
+	workerConfig                          [32]byte
 }
 
 func newApplication(root, data string) (*application, error) {
 	if err := os.MkdirAll(data, 0700); err != nil {
 		return nil, err
 	}
+	// MSIX can redirect AppData writes to the host's private package folder.
+	// Pass the opened directory's physical path to uv so its absolute Python
+	// junction targets refer to the files that Windows actually created.
+	physical, err := physicalDirectory(data)
+	if err != nil {
+		return nil, err
+	}
+	// Keep state reads on their existing view: MSIX may merge old real files
+	// with newer virtualized files. Only runtime paths need normalization.
 	// A virtual environment belongs to an installed plugin path. Credentials
 	// and import records remain shared across versions outside that path.
 	digest := sha256.Sum256([]byte(root + "\x00" + version))
-	return &application{root: root, data: data, environment: filepath.Join(data, "runtime", hex.EncodeToString(digest[:8]))}, nil
+	return &application{root: root, data: data, physicalData: physical, environment: filepath.Join(physical, "runtime", hex.EncodeToString(digest[:8]))}, nil
 }
 
 func (a *application) settingsPath() string { return filepath.Join(a.data, "settings.json") }

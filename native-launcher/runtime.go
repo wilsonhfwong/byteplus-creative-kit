@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -39,6 +40,15 @@ func (a *application) beginPrepare() {
 	a.mu.Unlock()
 	go func() {
 		err := a.prepareRuntime()
+		if err != nil {
+			// Runtime setup never receives credentials as arguments. Preserve
+			// filesystem/download errors locally instead of calling every
+			// preparation failure a network problem with no diagnostic record.
+			if log, openErr := os.OpenFile(filepath.Join(a.data, "runtime-install.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600); openErr == nil {
+				fmt.Fprintln(log, "Runtime preparation failed:", err)
+				log.Close()
+			}
+		}
 		a.mu.Lock()
 		defer a.mu.Unlock()
 		a.preparing = false
@@ -75,7 +85,7 @@ func (a *application) prepareRuntime() error {
 		time.Sleep(time.Second)
 	}
 	defer os.Remove(lock)
-	uv := filepath.Join(a.data, "bin", "uv-"+uvVersion)
+	uv := filepath.Join(a.physicalData, "bin", "uv-"+uvVersion)
 	if runtime.GOOS == "windows" {
 		uv += ".exe"
 	}
@@ -89,8 +99,13 @@ func (a *application) prepareRuntime() error {
 		return err
 	}
 	defer log.Close()
+	fmt.Fprintln(log, "Preparing runtime", version, "in", a.environment)
 	command := exec.Command(uv, "sync", "--directory", a.root, "--locked", "--no-dev", "--python", "3.12", "--managed-python")
-	command.Env = append(os.Environ(), "UV_CACHE_DIR="+filepath.Join(a.data, "cache"), "UV_PYTHON_INSTALL_DIR="+filepath.Join(a.data, "python"), "UV_PROJECT_ENVIRONMENT="+filepath.Join(a.environment, "venv"), "UV_NO_PROGRESS=1", "PYTHON_DOTENV_DISABLED=1")
+	// Use a fresh, short interpreter root. The old python/ directory may have
+	// dangling logical-AppData junctions. Nesting the interpreter below the
+	// per-version environment can also exceed the Windows executable loader's
+	// path limit once MSIX has expanded the storage path.
+	command.Env = append(os.Environ(), "UV_CACHE_DIR="+filepath.Join(a.physicalData, "cache"), "UV_PYTHON_INSTALL_DIR="+filepath.Join(a.physicalData, "py"), "UV_PROJECT_ENVIRONMENT="+filepath.Join(a.environment, "venv"), "UV_NO_PROGRESS=1", "PYTHON_DOTENV_DISABLED=1")
 	command.Stdout, command.Stderr = log, log
 	hideWindow(command)
 	if err = command.Run(); err != nil {

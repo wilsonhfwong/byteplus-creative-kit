@@ -85,6 +85,7 @@
 | 安装后找不到工具 | 确认插件已启用，并使用桌面应用的本地 Work/Codex 对话；新建对话后通过 `@BytePlus Creative Kit` 调用。 |
 | 添加仓库时出现 `failed to run git clone` 和 `program not found` | ChatGPT 未找到 Git。通过上方官方链接安装 Git for Windows，完全退出并重新打开 ChatGPT，再重试添加仓库。 |
 | 环境一直在准备或提示失败 | 确认可以访问 GitHub Releases 和 PyPI，再打开配置页面保存重试。无需运行安装命令。 |
+| Windows 提示 `Missing expected target directory for Python minor version link` | 更新至 0.2.4 或之后版本，完全退出并重新打开 ChatGPT，再让插件重新打开配置页面，保留密钥栏为空并保存重试。已保存的密钥会保留，无需移动 ChatGPT 安装目录或运行修复脚本。 |
 | 保存配置时提示“请求来源无效” | 更新或重新安装 0.2.2 及之后版本，再从插件重新打开 Setup 页面。旧配置页面不会随插件更新而自动修复。 |
 | 能看到设置技能，但找不到 `creative_kit_setup` / `creative_kit_status` | 更新或重新安装 0.2.3 及之后版本，完全退出并重新打开 ChatGPT，再在新对话中配置。早期版本的工具启动路径会被宿主拒绝。 |
 | 可以生成，但无法上传素材 | 补充 IAM 凭据、TOS 私有存储桶，并检查素材库和存储桶权限。 |
