@@ -20,6 +20,8 @@ def build(destination: Path) -> Path:
              'packages', 'licenses', 'scripts', 'skills', 'tests']
     excluded = {'.venv', '__pycache__', '.pytest_cache', '.git', '.runtime',
                 '.byteplus-creative-kit', 'output', 'dist', '.env'}
+    from bundle_cloud_runtime import bundle
+    bundle(SOURCE)
     files = []
     for name in roots:
         path = SOURCE / name

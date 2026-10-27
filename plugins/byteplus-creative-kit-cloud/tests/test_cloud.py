@@ -143,8 +143,33 @@ def test_downloads_are_workspace_scoped_and_never_overwrite(tmp_path, monkeypatc
 
 def test_plugin_is_skills_only():
     manifest = json.loads((ROOT/'plugin.json').read_text())
-    assert manifest['version'] == '0.2.0'
+    assert manifest['version'] == '0.2.1'
     assert 'mcpServers' not in manifest
     assert manifest['extensions']['com.openai'].get('requires_local_executor') is not True
     assert not any((ROOT / name).exists() for name in ('mcp.json', '.mcp.json', '.codex-plugin/plugin.json'))
     assert len(list((ROOT/'skills').glob('*/SKILL.md'))) == 2
+
+
+def test_wrapper_status_works_without_uv_or_network(tmp_path):
+    env = {k: v for k, v in os.environ.items() if k not in settings.ENV_FIELDS}
+    env.update(PATH="/nonexistent", HTTPS_PROXY="http://unreachable.invalid:9", HTTP_PROXY="http://unreachable.invalid:9",
+        BYTEPLUS_CREATIVE_DATA_DIR=str(tmp_path/'data'), ARK_API_KEY="fake-test-secret")
+    process = subprocess.run([sys.executable, str(ROOT/'scripts/run.py'), '--check'], env=env, capture_output=True, text=True, timeout=10)
+    assert process.returncode == 0
+    result = json.loads(process.stdout)
+    assert result['generation_configured'] is True
+    assert 'fake-test-secret' not in process.stdout
+    assert not (tmp_path/'data').exists()
+
+
+def test_bundled_runtime_restores_exact_source_without_network():
+    import base64, hashlib, io, zipfile
+    skill = ROOT/'skills/byteplus-creative-setup'
+    manifest = json.loads((skill/'references/runtime-manifest.json').read_text())
+    raw = base64.b64decode(''.join((skill/part).read_text().strip() for part in manifest['parts']), validate=True)
+    assert hashlib.sha256(raw).hexdigest() == manifest['sha256']
+    with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+        assert 'scripts/run.py' in archive.namelist()
+        for name in archive.namelist():
+            assert not Path(name).is_absolute() and '..' not in Path(name).parts
+            assert archive.read(name) == (ROOT/name).read_bytes()

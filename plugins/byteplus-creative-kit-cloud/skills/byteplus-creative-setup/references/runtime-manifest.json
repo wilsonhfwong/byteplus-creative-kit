@@ -1,0 +1,24 @@
+{
+  "format": "base64-zip",
+  "sha256": "34e0ee61b6cc0d783d9e95b19c49b561510cf9e46197412816e9a47386a66878",
+  "bytes": 121749,
+  "parts": [
+    "references/runtime-part-01.b64.txt",
+    "references/runtime-part-02.b64.txt",
+    "references/runtime-part-03.b64.txt",
+    "references/runtime-part-04.b64.txt",
+    "references/runtime-part-05.b64.txt",
+    "references/runtime-part-06.b64.txt",
+    "references/runtime-part-07.b64.txt",
+    "references/runtime-part-08.b64.txt",
+    "references/runtime-part-09.b64.txt",
+    "references/runtime-part-10.b64.txt",
+    "references/runtime-part-11.b64.txt",
+    "references/runtime-part-12.b64.txt",
+    "references/runtime-part-13.b64.txt",
+    "references/runtime-part-14.b64.txt",
+    "references/runtime-part-15.b64.txt",
+    "references/runtime-part-16.b64.txt",
+    "references/runtime-part-17.b64.txt"
+  ]
+}

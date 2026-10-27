@@ -1,6 +1,6 @@
 # BytePlus Creative Kit Cloud
 
-Version 0.2.0 is a **skills-only plugin for a managed Linux cloud executor**. ChatGPT reads the bundled skills and executes one-shot Python commands in its cloud workspace. There is no declared MCP server, local daemon, desktop launcher, or separately hosted service.
+Version 0.2.1 is a **skills-only plugin for a managed Linux cloud executor**. ChatGPT reads the bundled skills and executes one-shot Python commands in its cloud workspace. There is no declared MCP server, local daemon, desktop launcher, or separately hosted service.
 
 The plugin retains Seedream image generation, Seedance video submission and polling, the asset library, private TOS uploads, and output downloads. The bundled SDK modules still use the `mcp` Python library for their internal definitions; nothing registers or launches an MCP transport.
 
@@ -33,7 +33,9 @@ The last command submits a paid image request when configured. Example JSON argu
 
 Use `list` for every command's exact input schema. For video, preserve the returned task ID and poll `seedance_check_task` with a separate command. Downloads use `seed_media_download`. Exit status 1 with `status:error` reports a failure; do not repeat a mutation whose submission outcome is unknown.
 
-The wrapper uses `uv run --frozen --no-dev` and installs dependencies in a writable cloud data directory. It does not require writes to the plugin installation folder. First execution needs package-manager access; subsequent commands reuse the environment. Every invocation reads current secrets and exits after returning JSON.
+`--check` runs without uv or network access. The setup skill includes a SHA-256-verified runtime recovery bundle in its own supporting resources, so missing workspace files can be restored without GitHub access. This bundle contains source, not installed dependencies: first-time dependency installation and provider API calls still require a working workspace proxy. A proxy connection error with `Operation not permitted` may come from the command sandbox: use the execution tool's supported network permission and keep the proxy and destination policy intact. If a dependency command succeeds with that permission, the proxy itself was not the failure.
+
+For generation commands the wrapper uses `uv run --frozen --no-dev` and installs dependencies in a writable cloud data directory. It does not require writes to the plugin installation folder. First execution needs package-manager access; subsequent commands reuse the environment. Every invocation reads current secrets and exits after returning JSON.
 
 ## Environment settings
 
