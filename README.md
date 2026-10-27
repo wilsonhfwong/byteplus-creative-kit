@@ -6,6 +6,12 @@
 
 本说明按 **0.2.5** 版本编写。Windows 用户请使用 0.2.5 或更新版本，本地数据已改为保存在用户文件夹中，具体位置见下方“本地数据”。
 
+## 云端 Linux 版本
+
+云端执行环境请使用独立的 [`byteplus-creative-kit-cloud`](plugins/byteplus-creative-kit-cloud/README.md)。它需要 Python 3.12 和 uv，通过环境变量配置凭据，将生成结果保存在云端工作区。它是云端执行器中的 stdio MCP 插件，不是托管的 HTTPS MCP 服务；当前网页插件安装器会将此 stdio 连接标为“Open in desktop app”。如需在云端工作区运行，请按该版本 README 使用自带 MCP 客户端；上传 ZIP 不会在网页云端宿主中注册工具。
+
+从仓库根目录运行 `python scripts/package_cloud.py`，生成可单独上传的 `dist/byteplus-creative-kit-cloud.zip`。请勿将整个仓库 ZIP 上传到单插件上传入口。
+
 ## 安装
 
 **首次从 GitHub 添加仓库前：** ChatGPT 需要能在电脑上找到 Git，才能下载插件仓库。Windows 如尚未安装，请通过 [Git 官方 Windows 下载页](https://git-scm.com/install/windows) 下载 **Git for Windows/x64 Setup**，运行图形安装程序并保留默认选项。安装后完全退出并重新打开 ChatGPT，再添加仓库。整个过程无需输入任何命令。若 Git 已安装但仍提示找不到程序，请先重启 ChatGPT；必要时重启 Windows 后再试。
@@ -110,3 +116,4 @@
 重新安装或升级插件会保留这里的配置和上传记录。卸载插件不会删除 TOS 对象、素材库资源或已经生成的媒体。
 
 开发与打包说明见 [维护说明](docs/MAINTAINER.md)。第三方代码声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
