@@ -6,6 +6,12 @@
 
 本说明按 **0.2.5** 版本编写。Windows 用户请使用 0.2.5 或更新版本，本地数据已改为保存在用户文件夹中，具体位置见下方“本地数据”。
 
+## 云端 Linux 版本
+
+云端工作区使用独立的 [`byteplus-creative-kit-cloud`](plugins/byteplus-creative-kit-cloud/README.md) 0.2.1。它是仅含技能和配套 Python 命令的插件，**不声明 MCP 服务器，不依赖桌面应用**。ChatGPT 在托管 Linux 执行环境中运行命令，通过环境变量读取凭据，将素材记录和生成结果保存在工作区。需要 Python 3.12、uv 和相应网络权限；没有代码执行器的普通对话不能运行。
+
+从仓库根目录运行 `python scripts/package_cloud.py`，生成可单独上传的 `dist/byteplus-creative-kit-cloud.zip`。升级旧 0.1.0 版本时还需移除其 stdio MCP 连接；如果上传更新保留旧组件，请移除旧插件后重新上传 0.2.0。新版本应显示两个技能、零个 MCP 服务器。
+
 ## 安装
 
 **首次从 GitHub 添加仓库前：** ChatGPT 需要能在电脑上找到 Git，才能下载插件仓库。Windows 如尚未安装，请通过 [Git 官方 Windows 下载页](https://git-scm.com/install/windows) 下载 **Git for Windows/x64 Setup**，运行图形安装程序并保留默认选项。安装后完全退出并重新打开 ChatGPT，再添加仓库。整个过程无需输入任何命令。若 Git 已安装但仍提示找不到程序，请先重启 ChatGPT；必要时重启 Windows 后再试。
@@ -110,3 +116,4 @@
 重新安装或升级插件会保留这里的配置和上传记录。卸载插件不会删除 TOS 对象、素材库资源或已经生成的媒体。
 
 开发与打包说明见 [维护说明](docs/MAINTAINER.md)。第三方代码声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
