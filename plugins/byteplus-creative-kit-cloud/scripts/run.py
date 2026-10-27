@@ -1,4 +1,4 @@
-"""Start the locked cloud runtime. Diagnostics go to stderr, never MCP stdout."""
+"""Start the locked cloud runtime. One command per process; JSON results go to stdout."""
 import os
 from pathlib import Path
 import shutil
@@ -15,4 +15,4 @@ uv = shutil.which("uv")
 if not uv:
     sys.exit("BytePlus Cloud requires uv on PATH. Install uv in the cloud environment, then restart the plugin.")
 os.execv(uv, [uv, "run", "--frozen", "--no-dev", "--project", str(root),
-              "python", "-m", "byteplus_creative.cloud_server", *sys.argv[1:]])
+              "python", "-m", "byteplus_creative.cloud_cli", *sys.argv[1:]])

@@ -1,4 +1,4 @@
-"""Start local stdio MCPs using only this bundle's configuration."""
+"""Compose cloud-executor commands from the bundled SDKs."""
 from __future__ import annotations
 
 import argparse
@@ -22,9 +22,9 @@ class RedactFilter(logging.Filter):
         return True
 
 
-def build_server(service: str, settings: dict):
+def build_commands(service: str, settings: dict):
     configure_environment(settings)
-    from mcp.server.fastmcp import FastMCP
+    from .registry import CommandRegistry
     from .tools import guarded, register
     if service == "seedance":
         from seedance_mcp import server as upstream
@@ -54,7 +54,7 @@ def build_server(service: str, settings: dict):
         raise ValueError("Unknown service.")
     for handler in logging.getLogger().handlers:
         handler.addFilter(RedactFilter(settings))
-    server = FastMCP(name="byteplus-" + service, instructions=instructions)
+    server = CommandRegistry(instructions=instructions)
     for name in names:
         server.tool()(guarded(getattr(upstream, name), settings))
     if service == "seedance":

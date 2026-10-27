@@ -1,13 +1,13 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "byteplus-creative-kit-cloud",
-  "version": "0.1.0",
-  "description": "Seedream images, Seedance videos and reusable assets in a Linux cloud executor.",
+  "version": "0.2.0",
+  "description": "Generate Seedream images, Seedance videos and reusable assets through skills executed in a managed cloud workspace.",
   "extensions": {
     "com.openai": {
       "interface": {
         "displayName": "BytePlus Creative Kit \u00b7 Cloud",
-        "shortDescription": "Generate images and videos in a Linux cloud workspace",
+        "shortDescription": "Create images and videos in a managed cloud workspace",
         "capabilities": [
           "Read",
           "Write"

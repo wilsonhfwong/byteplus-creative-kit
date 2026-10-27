@@ -8,9 +8,9 @@
 
 ## 云端 Linux 版本
 
-云端执行环境请使用独立的 [`byteplus-creative-kit-cloud`](plugins/byteplus-creative-kit-cloud/README.md)。它需要 Python 3.12 和 uv，通过环境变量配置凭据，将生成结果保存在云端工作区。它是云端执行器中的 stdio MCP 插件，不是托管的 HTTPS MCP 服务；当前网页插件安装器会将此 stdio 连接标为“Open in desktop app”。如需在云端工作区运行，请按该版本 README 使用自带 MCP 客户端；上传 ZIP 不会在网页云端宿主中注册工具。
+云端工作区使用独立的 [`byteplus-creative-kit-cloud`](plugins/byteplus-creative-kit-cloud/README.md) 0.2.0。它是仅含技能和配套 Python 命令的插件，**不声明 MCP 服务器，不依赖桌面应用**。ChatGPT 在托管 Linux 执行环境中运行命令，通过环境变量读取凭据，将素材记录和生成结果保存在工作区。需要 Python 3.12、uv 和相应网络权限；没有代码执行器的普通对话不能运行。
 
-从仓库根目录运行 `python scripts/package_cloud.py`，生成可单独上传的 `dist/byteplus-creative-kit-cloud.zip`。请勿将整个仓库 ZIP 上传到单插件上传入口。
+从仓库根目录运行 `python scripts/package_cloud.py`，生成可单独上传的 `dist/byteplus-creative-kit-cloud.zip`。升级旧 0.1.0 版本时还需移除其 stdio MCP 连接；如果上传更新保留旧组件，请移除旧插件后重新上传 0.2.0。新版本应显示两个技能、零个 MCP 服务器。
 
 ## 安装
 

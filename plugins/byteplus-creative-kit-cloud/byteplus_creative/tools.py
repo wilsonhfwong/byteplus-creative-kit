@@ -26,7 +26,6 @@ def guarded(function, settings):
 
 
 def register(server, settings: dict) -> None:
-    from mcp.types import ToolAnnotations
     instance = None
 
     def library():
@@ -37,7 +36,7 @@ def register(server, settings: dict) -> None:
 
     def tool(*, read_only=False, destructive=False):
         def decorate(function):
-            server.tool(annotations=ToolAnnotations(readOnlyHint=read_only, destructiveHint=destructive, idempotentHint=read_only))(guarded(function, settings))
+            server.tool(annotations=dict(readOnlyHint=read_only, destructiveHint=destructive, idempotentHint=read_only))(guarded(function, settings))
             return function
         return decorate
 

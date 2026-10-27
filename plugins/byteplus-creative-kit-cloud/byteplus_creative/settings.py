@@ -39,7 +39,6 @@ def configure_environment(settings: dict) -> None:
             continue
         os.environ[env] = str(settings.get(field, ""))
     os.environ["SEED_KIT_ISOLATED"] = "1"
-    os.environ["MCP_TRANSPORT"] = "stdio"
     os.environ["PYTHON_DOTENV_DISABLED"] = "1"
     os.environ["SEEDANCE_ASSET_HOST"] = "ark.ap-southeast-1.byteplusapi.com"
     os.environ["SEEDREAM_BASE_URL"] = settings["ark_base_url"].rstrip("/")

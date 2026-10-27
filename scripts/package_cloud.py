@@ -16,7 +16,7 @@ def build(destination: Path) -> Path:
     # Explicit source roots prevent a local settings file or generated media
     # from being included merely because it exists in a checkout.
     roots = ['.gitignore', 'README.md', 'THIRD_PARTY_NOTICES.md', 'plugin.json',
-             'mcp.json', 'pyproject.toml', 'uv.lock', 'byteplus_creative',
+             'pyproject.toml', 'uv.lock', 'byteplus_creative',
              'packages', 'licenses', 'scripts', 'skills', 'tests']
     excluded = {'.venv', '__pycache__', '.pytest_cache', '.git', '.runtime',
                 '.byteplus-creative-kit', 'output', 'dist', '.env'}
@@ -43,7 +43,8 @@ def build(destination: Path) -> Path:
             archive.writestr(entry, path.read_bytes())
     with zipfile.ZipFile(destination) as archive:
         assert archive.testzip() is None
-        assert {'plugin.json', 'mcp.json', 'scripts/run.py', 'uv.lock'} <= set(archive.namelist())
+        assert {'plugin.json', 'scripts/run.py', 'uv.lock'} <= set(archive.namelist())
+        assert not any(name.endswith(('mcp.json', '.mcp.json')) for name in archive.namelist())
     return destination
 
 

@@ -1,66 +1,77 @@
-# BytePlus Creative Kit · Cloud
+# BytePlus Creative Kit Cloud
 
-Version 0.1.0 adapts the supplied desktop source for a Linux cloud executor. It retains Seedream image generation, Seedance video generation and polling, the persistent asset library, private TOS uploads, and result downloads. No desktop binaries, browser setup, or credentials are packaged.
+Version 0.2.0 is a **skills-only plugin for a managed Linux cloud executor**. ChatGPT reads the bundled skills and executes one-shot Python commands in its cloud workspace. There is no declared MCP server, local daemon, desktop launcher, or separately hosted service.
 
-## Install and run
+The plugin retains Seedream image generation, Seedance video submission and polling, the asset library, private TOS uploads, and output downloads. The bundled SDK modules still use the `mcp` Python library for their internal definitions; nothing registers or launches an MCP transport.
 
-Upload **byteplus-creative-kit-cloud.zip** as one plugin. Its root contains `plugin.json`, `mcp.json`, skills, and the Python source. The current web plugin installer offers this stdio MCP connection through **Open in desktop app**. Linux-compatible code does not change that host restriction. This package is source for execution in a Linux workspace with Python 3.12 and `uv` on PATH; uploading it does not register its tools in the browser cloud host. It is not a remotely hosted HTTPS MCP service. Browser-native tool integration requires a separately hosted HTTPS MCP endpoint, or a separate skills-only package without a stdio MCP declaration.
+## Install
 
-The configured command is `python3 ${PLUGIN_ROOT}/scripts/run.py`. The wrapper uses `uv run --frozen --no-dev` to install the bundled workspace packages and locked dependencies, then launches the server. First startup needs package-manager access and may take longer than later starts. The virtual environment and uv cache live in the configured data directory, not the plugin installation directory.
+Upload **byteplus-creative-kit-cloud.zip** as one plugin and start a conversation with a managed cloud execution environment. Ask “Configure BytePlus Creative Kit Cloud” or describe the image/video you want.
 
-To use the source directly, extract the ZIP in the cloud workspace, open its folder, and run:
+The package includes two skills and their Python source. The new package has **no `mcp.json`** and no compatibility stdio declaration. Version 0.1.0's desktop prompt came from its stdio server declaration; 0.2.0 removes that dependency. Cloud execution requires shell/code tools, Python 3.12, uv, environment secrets, and network access. A plain chat without an executor cannot run the commands. Browser UI installation still needs validation in the target host.
+
+If updating the existing personal plugin, remove the old stdio connection as well as replacing its files. If the uploader keeps old components during an update, uninstall/remove the old 0.1.0 plugin and upload 0.2.0 as a fresh package. Do not keep its old MCP connection. There should be two skills and no MCP server listed for 0.2.0.
+
+If a host exposes the skills without materializing their supporting files, the agent can fetch this repository's `plugins/byteplus-creative-kit-cloud` source into the executor. All paths refer to the cloud filesystem, not the user's computer.
+
+## Execution
+
+Resolve the installed plugin root and run its wrapper:
 
 ```sh
 python3 scripts/run.py --check
+python3 scripts/run.py list
+python3 scripts/run.py call creative_kit_status
+python3 scripts/run.py call seedream_generate --arguments /workspace/work/image-request.json
 ```
 
-This reports configuration flags only and does not contact BytePlus.
+The last command submits a paid image request when configured. Example JSON arguments:
 
-If the host accepts skills but does not expose the cloud MCP tools, the agent can run the included MCP client from the extracted plugin folder:
-
-```sh
-uv run --frozen --no-dev python scripts/mcp_call.py list
-uv run --frozen --no-dev python scripts/mcp_call.py creative_kit_status
-uv run --frozen --no-dev python scripts/mcp_call.py seedream_generate --arguments /workspace/work/image-request.json
+```json
+{"prompt":"A watercolor mountain landscape","model":"seedream-4-5-251128","size":"2K"}
 ```
 
-The last command submits a paid image generation when credentials are configured. Example request JSON: `{"prompt":"A watercolor mountain landscape","model":"seedream-4-5-251128","size":"2K"}`. Tool arguments never contain credentials. For video, retain the returned task ID and poll `seedance_check_task`; do not resubmit a timed-out mutation blindly.
+Use `list` for every command's exact input schema. For video, preserve the returned task ID and poll `seedance_check_task` with a separate command. Downloads use `seed_media_download`. Exit status 1 with `status:error` reports a failure; do not repeat a mutation whose submission outcome is unknown.
 
-## Cloud environment settings
+The wrapper uses `uv run --frozen --no-dev` and installs dependencies in a writable cloud data directory. It does not require writes to the plugin installation folder. First execution needs package-manager access; subsequent commands reuse the environment. Every invocation reads current secrets and exits after returning JSON.
 
-Set credential values through the environment's secret settings, not chat, source files, or command arguments. The actual MCP process must inherit these settings. Restart it after changes.
+## Environment settings
 
-| Setting | Purpose |
+Configure credentials in the cloud environment's secret settings, never chat, source files, argument JSON, or shell arguments. The actual execution process must inherit these settings.
+
+| Variable | Purpose |
 | --- | --- |
 | `ARK_API_KEY` | Secret; image/video generation |
 | `ARK_AK`, `ARK_SK` | Secrets; asset-library API |
 | `ARK_SESSION_TOKEN` | Optional temporary IAM session token |
-| `SEEDANCE_TOS_BUCKET` | Existing private bucket for uploads |
+| `SEEDANCE_TOS_BUCKET` | Existing private bucket for workspace file uploads |
 | `SEEDANCE_TOS_REGION` | Default `ap-southeast-1` |
 | `SEEDANCE_TOS_ENDPOINT` | Default `tos-ap-southeast-1.bytepluses.com` |
 | `BYTEPLUS_TOS_AK`, `BYTEPLUS_TOS_SK`, `BYTEPLUS_TOS_SESSION_TOKEN` | Optional separate upload secrets; otherwise use IAM credentials |
 | `ARK_BASE_URL` | Default `https://ark.ap-southeast.bytepluses.com/api/v3` |
 | `SEEDANCE_PROJECT_NAME` | Default `default` |
-| `SEEDREAM_MODEL` | Default `seedream-4-5-251128`; requests may explicitly select another model |
-| `BYTEPLUS_SEED_MODEL` | Optional enabled text model/endpoint ID; enables `seed_text` |
+| `SEEDREAM_MODEL` | Default `seedream-4-5-251128`; individual requests may choose a model |
+| `BYTEPLUS_SEED_MODEL` | Optional enabled text model/endpoint ID |
 | `BYTEPLUS_CREATIVE_WORKSPACE` | Default `/workspace` |
-| `BYTEPLUS_CREATIVE_DATA_DIR` | Default `<workspace>/.byteplus-creative-kit`; contains SQLite import records, venv and cache |
-| `BYTEPLUS_CREATIVE_OUTPUT_DIR` | Default `<workspace>/output/byteplus-creative-kit` |
+| `BYTEPLUS_CREATIVE_DATA_DIR` | Default `<workspace>/.byteplus-creative-kit`; import records, Python environment and cache |
+| `BYTEPLUS_CREATIVE_OUTPUT_DIR` | Default `<workspace>/output/byteplus-creative-kit`; use the host's downloadable output directory if different |
 
-Use persistent storage for the data directory when possible. Operation records support reconciliation across restarts, but will be lost if an ephemeral workspace is discarded. Download outputs before discarding the environment. Local file paths refer to the cloud filesystem; user attachments must be transferred there first.
+Persist the data directory when possible. It contains the SQLite operation records needed to reconcile imports across command invocations. Download outputs before an ephemeral environment is discarded. Transfer user attachments into the cloud workspace before referencing file paths.
 
-Allow outbound HTTPS to the configured API, asset, and TOS hosts through your cloud environment's network configuration:
+Allow HTTPS to `ark.ap-southeast.bytepluses.com`, `ark.ap-southeast-1.byteplusapi.com`, the configured TOS endpoint and bucket hostname, and provider-returned media hosts. First installation also needs `pypi.org` and `files.pythonhosted.org`. Preserve the inherited proxy, CA trust and TLS verification; add denied destinations through supported environment settings. The project does not create a bucket or enable models/services on the account.
 
-- `ark.ap-southeast.bytepluses.com`
-- `ark.ap-southeast-1.byteplusapi.com`
-- `tos-ap-southeast-1.bytepluses.com` and your bucket's actual hostname
-- Provider-returned media/download hosts used by your results
-- `pypi.org` and `files.pythonhosted.org` for first dependency installation
+## Build and verify
 
-Keep the executor's proxy, TLS verification and CA settings. Add denied destinations using the environment's supported network configuration; do not bypass its proxy. The project does not create a bucket or enable models/services on the account.
+From the repository root:
 
-## Verification and limits
+```sh
+python scripts/package_cloud.py
+```
 
-`creative_kit_status` reports presence of settings, not validity of keys, account access, network connectivity, or enabled models. Listing models is a preset list, not an account entitlement check. API calls may incur charges. The included automated tests cover environment configuration/redaction, MCP startup/discovery and credential-free failure paths, mocked generation responses, and download behavior. Live generation requires the user's secrets and network access and is not covered by those checks.
+This produces `dist/byteplus-creative-kit-cloud.zip` with exactly one plugin and no MCP declaration or runtime state. From this plugin folder:
 
-Run development checks with `uv run --frozen pytest -q`. The inherited vendor source and attribution are in `packages/`, `licenses/`, and `THIRD_PARTY_NOTICES.md`. This is an adaptation of the uploaded BytePlus Creative Kit source, not a claim of official BytePlus distribution.
+```sh
+uv run --frozen pytest -q
+```
+
+Tests cover real one-shot command execution, input validation and failure exit codes, environment isolation/redaction, mocked image/video requests, download handling, and the absence of an MCP declaration. They do not prove live model access or browser installation. `--check` reports configuration presence rather than key validity or provider connectivity. Source attribution is in `THIRD_PARTY_NOTICES.md` and `licenses/`.
